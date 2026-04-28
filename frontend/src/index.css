@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #15803d; /* green-700 - earthy and trusted */
+  --color-primary-dark: #166534; /* green-800 */
+  --color-secondary: #eab308; /* yellow-500 */
+  --color-accent: #ef4444; /* red-500 */
+  --color-surface: #ffffff; /* pure white for cards */
+  --color-background: #f8fafc; /* slate-50 - very clean off-white */
+}
+
+body {
+  @apply bg-[var(--color-background)] text-slate-800 m-0 p-0 font-sans antialiased selection:bg-primary/20 selection:text-primary-dark;
+}
+
+/* Custom Scrollbar for better UX */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-[var(--color-background)];
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full hover:bg-slate-400 transition-colors;
+}
