@@ -1,9 +1,10 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from 'react';
-import { PlusCircle, Package, IndianRupee, TrendingUp, TrendingDown, CheckCircle, Clock, Sparkles, Mic, MapPin, Banknote, CreditCard, X, Truck } from 'lucide-react';
+import { PlusCircle, Package, IndianRupee, TrendingUp, TrendingDown, CheckCircle, Clock, Sparkles, Mic, MapPin, Banknote, CreditCard, X, Truck, Zap, Edit2, Trash2, AlertTriangle, Save, UploadCloud } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from '../context/LocationContext';
+import SmartSell from '../components/SmartSell';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -39,6 +40,8 @@ const FarmerDashboard = () => {
   const [selectedOrderMap, setSelectedOrderMap] = useState(null);
   const [notification, setNotification] = useState(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showSmartSell, setShowSmartSell] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
 
   const [isListening, setIsListening] = useState(false);
   const [dataSource, setDataSource] = useState('mock');
@@ -160,6 +163,102 @@ const FarmerDashboard = () => {
     } else {
       const [defaultLat, defaultLng] = getCoordinates(selectedLocation);
       submitProduct(defaultLat, defaultLng);
+    }
+  };
+
+  const handleBulkUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const text = event.target.result;
+      const rows = text.split('\n').filter(row => row.trim().length > 0);
+      if (rows.length === 0) return;
+      
+      const startIdx = rows[0].toLowerCase().includes('name') ? 1 : 0;
+      let successCount = 0;
+      
+      setIsAnalyzing(true);
+      
+      for (let i = startIdx; i < rows.length; i++) {
+        const columns = rows[i].split(',');
+        if (columns.length >= 3) {
+          const name = columns[0].trim();
+          const qty = columns[1].trim();
+          const price = columns[2].trim();
+          
+          if (name && qty && price) {
+            try {
+              const [lat, lng] = getCoordinates(selectedLocation);
+              await fetch('http://localhost:5000/api/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, qty, price, location: selectedLocation, lat, lng })
+              });
+              successCount++;
+            } catch (error) {
+              console.error('Error in bulk upload row:', error);
+            }
+          }
+        }
+      }
+      
+      setIsAnalyzing(false);
+      setNotification(`Successfully uploaded ${successCount} products from CSV!`);
+      setTimeout(() => setNotification(null), 3000);
+      fetchProducts();
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  };
+
+  const handleUpdateStock = async (id, currentStock) => {
+    const newStock = window.prompt("Enter new stock quantity (e.g., '550 kg' or '550'):", currentStock);
+    if (newStock === null || newStock === "") return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/products/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stock: newStock })
+      });
+      if (res.ok) fetchProducts();
+    } catch (error) {
+      console.error('Error updating stock:', error);
+    }
+  };
+
+  const handleDeleteProduct = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this product?")) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/products/${id}`, { method: 'DELETE' });
+      if (res.ok) fetchProducts();
+    } catch (error) {
+      console.error('Error deleting product:', error);
+    }
+  };
+
+  const submitEditProduct = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`http://localhost:5000/api/products/${editingProduct.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          name: editingProduct.name,
+          stock: editingProduct.stock || editingProduct.qty,
+          price: editingProduct.price
+        })
+      });
+      if (res.ok) {
+        setEditingProduct(null);
+        fetchProducts();
+        setNotification("Product updated successfully!");
+        setTimeout(() => setNotification(null), 3000);
+      }
+    } catch (error) {
+      console.error('Error updating product:', error);
     }
   };
 
@@ -292,13 +391,19 @@ const FarmerDashboard = () => {
               <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                 <PlusCircle className="text-primary w-5 h-5" /> {t('farmer.listNew')}
               </h2>
-              <button 
-                type="button"
-                onClick={startVoiceInput}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${isListening ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' : 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20'}`}
-              >
-                <Mic className="w-4 h-4" /> {isListening ? 'Listening...' : 'Voice Input'}
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  type="button"
+                  onClick={startVoiceInput}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${isListening ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' : 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20'}`}
+                >
+                  <Mic className="w-4 h-4" /> {isListening ? 'Listening...' : 'Voice Input'}
+                </button>
+                <label className="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold border transition-colors bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100">
+                  <UploadCloud className="w-4 h-4" /> Bulk CSV
+                  <input type="file" accept=".csv" className="hidden" onChange={handleBulkUpload} />
+                </label>
+              </div>
             </div>
             <form onSubmit={handleAddProduct} className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="md:col-span-3 lg:col-span-1">
@@ -383,6 +488,50 @@ const FarmerDashboard = () => {
             </form>
           </div>
 
+          {/* Low Stock Alerts */}
+          {(() => {
+            const lowStockItems = inventory.filter(item => {
+              let stockNum = 0;
+              const currentStock = item.stock || item.qty || '0';
+              if (typeof currentStock === 'string') {
+                stockNum = parseInt(currentStock.replace(/[^\d]/g, '')) || 0;
+              } else {
+                stockNum = Number(currentStock) || 0;
+              }
+              return stockNum <= 20;
+            });
+
+            if (lowStockItems.length === 0) return null;
+
+            return (
+              <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-4 shadow-sm animate-in fade-in duration-300">
+                <div className="flex items-center gap-2 mb-3 text-red-700 font-bold">
+                  <AlertTriangle className="w-5 h-5" />
+                  <span>Inventory Alerts - Low Stock Items</span>
+                </div>
+                <div className="space-y-2">
+                  {lowStockItems.map(item => (
+                    <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded-xl border border-red-100 shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <img src={item.image || 'https://images.unsplash.com/photo-1595856417537-8848d56b063d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=60'} alt={item.name} className="w-10 h-10 rounded-lg object-cover" />
+                        <div>
+                          <p className="font-bold text-slate-800 text-sm">{item.name}</p>
+                          <p className="text-xs text-red-600 font-medium">Only {item.stock || item.qty} left in stock. Please replenish soon.</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => handleUpdateStock(item.id, item.stock || item.qty)}
+                        className="text-xs bg-red-100 hover:bg-red-200 text-red-700 font-bold px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        Update Stock
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Current Inventory */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
@@ -399,7 +548,7 @@ const FarmerDashboard = () => {
                     <th className="px-6 py-4 font-bold">{t('farmer.colProduce')}</th>
                     <th className="px-6 py-4 font-bold">{t('farmer.colQty')}</th>
                     <th className="px-6 py-4 font-bold">{t('farmer.colPrice')}</th>
-                    <th className="px-6 py-4 font-bold">{t('farmer.colStatus')}</th>
+                    <th className="px-6 py-4 font-bold">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -409,12 +558,36 @@ const FarmerDashboard = () => {
                         <img src={item.image || 'https://images.unsplash.com/photo-1595856417537-8848d56b063d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=60'} alt={item.name} className="w-12 h-12 rounded-lg object-cover border border-slate-200 shadow-sm" />
                       </td>
                       <td className="px-6 py-4 font-bold text-slate-800 group-hover:text-primary transition-colors">{item.name}</td>
-                      <td className="px-6 py-4 text-slate-600 font-medium">{item.stock || item.qty}</td>
-                      <td className="px-6 py-4 text-slate-700 font-bold flex items-center gap-0.5 mt-2"><IndianRupee className="w-3.5 h-3.5 text-slate-400"/>{item.price}</td>
+                      <td className="px-6 py-4 text-slate-600 font-medium">
+                        <div className="flex items-center gap-2">
+                          <span>{item.stock || item.qty}</span>
+                          <button 
+                            onClick={() => handleUpdateStock(item.id, item.stock || item.qty)}
+                            className="p-1 hover:bg-slate-200 rounded text-slate-500 hover:text-primary transition-colors"
+                            title="Quick Update Stock"
+                          >
+                            <PlusCircle className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-slate-700 font-bold flex items-center gap-0.5"><IndianRupee className="w-3.5 h-3.5 text-slate-400"/>{item.price}</td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
-                          <CheckCircle className="w-3 h-3" /> {item.status}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => setEditingProduct({...item, stock: item.stock || item.qty})}
+                            className="p-1.5 bg-slate-100 hover:bg-primary hover:text-white rounded-lg text-slate-600 transition-colors"
+                            title="Edit Product"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteProduct(item.id)}
+                            className="p-1.5 bg-red-50 hover:bg-red-600 hover:text-white rounded-lg text-red-500 transition-colors"
+                            title="Delete Product"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -422,6 +595,40 @@ const FarmerDashboard = () => {
               </table>
             </div>
           </div>
+
+          {/* Smart Sell Banner/Toggle */}
+          {!showSmartSell ? (
+            <div className="bg-primary rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between shadow-xl shadow-primary/20 text-white relative overflow-hidden mt-8">
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+              <div className="relative z-10 max-w-xl mb-6 md:mb-0">
+                <h3 className="text-3xl font-black mb-2 flex items-center gap-3">
+                  <Zap className="w-8 h-8 text-yellow-300" /> Start Smart Selling
+                </h3>
+                <p className="text-white/80 font-medium">Clear out your inventory faster with AI-driven dynamic pricing and direct matching with active buyers.</p>
+              </div>
+              <button 
+                onClick={() => setShowSmartSell(true)}
+                className="relative z-10 bg-white text-primary hover:bg-slate-50 px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg whitespace-nowrap"
+              >
+                Open Smart Sell
+              </button>
+            </div>
+          ) : (
+            <div className="relative mt-8">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+                  <Zap className="w-6 h-6 text-primary" /> Active Smart Selling
+                </h3>
+                <button 
+                  onClick={() => setShowSmartSell(false)}
+                  className="text-slate-500 hover:text-slate-700 font-bold text-sm flex items-center gap-1"
+                >
+                  <X className="w-4 h-4" /> Close
+                </button>
+              </div>
+              <SmartSell mode="sell" />
+            </div>
+          )}
         </div>
 
         {/* Right Column - Active Orders */}
@@ -580,6 +787,69 @@ const FarmerDashboard = () => {
                  )}
                </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Product Modal */}
+      {editingProduct && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+             <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                  <Edit2 className="w-5 h-5 text-primary" /> Edit Product
+                </h3>
+                <button onClick={() => setEditingProduct(null)} className="text-slate-400 hover:text-slate-600 bg-white border border-slate-200 rounded-full p-1.5"><X className="w-5 h-5" /></button>
+             </div>
+             
+             <form onSubmit={submitEditProduct} className="p-6 space-y-4">
+               <div>
+                 <label className="block text-sm font-bold text-slate-700 mb-1.5">Product Name</label>
+                 <input
+                   type="text"
+                   value={editingProduct.name}
+                   onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})}
+                   className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                   required
+                 />
+               </div>
+               <div>
+                 <label className="block text-sm font-bold text-slate-700 mb-1.5">Available Stock</label>
+                 <input
+                   type="text"
+                   value={editingProduct.stock || editingProduct.qty || ''}
+                   onChange={(e) => setEditingProduct({...editingProduct, stock: e.target.value})}
+                   className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                   required
+                 />
+               </div>
+               <div>
+                 <label className="block text-sm font-bold text-slate-700 mb-1.5">Price (₹)</label>
+                 <input
+                   type="number"
+                   value={editingProduct.price}
+                   onChange={(e) => setEditingProduct({...editingProduct, price: e.target.value})}
+                   className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                   required
+                 />
+               </div>
+
+               <div className="pt-4 flex gap-3">
+                 <button 
+                   type="button" 
+                   onClick={() => setEditingProduct(null)}
+                   className="flex-1 bg-white border border-slate-200 text-slate-700 font-bold py-3 rounded-xl hover:bg-slate-50 transition-all"
+                 >
+                   Cancel
+                 </button>
+                 <button 
+                   type="submit" 
+                   className="flex-1 bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary-dark transition-all flex items-center justify-center gap-2"
+                 >
+                   <Save className="w-4 h-4" /> Save Changes
+                 </button>
+               </div>
+             </form>
           </div>
         </div>
       )}

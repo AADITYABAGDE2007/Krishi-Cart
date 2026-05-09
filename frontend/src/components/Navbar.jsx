@@ -55,6 +55,12 @@ const Navbar = () => {
                 <input 
                   type="text" 
                   placeholder="Search for fresh produce..."
+                  defaultValue={new URLSearchParams(routeLocation.search).get('search') || ''}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      navigate(`/?search=${e.target.value}`);
+                    }
+                  }}
                   className="w-full bg-slate-100 border border-slate-200 rounded-full py-3 pl-12 pr-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary transition-all"
                 />
               </div>
@@ -89,11 +95,25 @@ const Navbar = () => {
                     </Link>
                   </div>
                 ) : (
-                  <>
+                  <div className="flex items-center gap-2">
                     <Link to="/profile" className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 border border-slate-200 text-slate-600 hover:text-primary hover:border-primary/50 transition-colors group" title="Profile">
-                      <User className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                      {user?.image ? (
+                        <img src={user.image} alt={user.name} className="w-full h-full object-cover rounded-full" />
+                      ) : (
+                        <User className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                      )}
                     </Link>
-                  </>
+                    <button 
+                      onClick={() => {
+                        logout();
+                        navigate('/login');
+                      }}
+                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                      title="Logout"
+                    >
+                      <LogOut className="w-5 h-5" />
+                    </button>
+                  </div>
                 )}
                 
                 <Link to="/checkout" className="relative p-2.5 text-slate-600 hover:text-primary transition-colors bg-slate-50 rounded-full hover:bg-slate-100" title="Cart">

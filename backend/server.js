@@ -159,6 +159,36 @@ app.post('/api/products', async (req, res) => {
   }
 });
 
+app.put('/api/products/:id', async (req, res) => {
+  try {
+    const { name, stock, price } = req.body;
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (stock) updateData.stock = stock;
+    if (price) updateData.price = Number(price);
+
+    const product = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+    
+    const formatted = {...product.toObject(), id: product._id.toString()};
+    io.emit('product_updated', formatted);
+    res.json(formatted);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update product' });
+  }
+});
+
+app.delete('/api/products/:id', async (req, res) => {
+  try {
+    const product = await Product.findByIdAndDelete(req.params.id);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+    io.emit('product_deleted', req.params.id);
+    res.json({ success: true, message: 'Product deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete product' });
+  }
+});
+
 // Orders & Delivery Logic
 app.get('/api/orders', async (req, res) => {
   try {
@@ -336,30 +366,83 @@ app.put('/api/deliveries/:id/verify-otp', async (req, res) => {
 // Market Prices
 app.get('/api/mandi-prices', async (req, res) => {
   const { city } = req.query;
+  try {
+    const govApiKey = process.env.DATA_GOV_API_KEY;
+    if (govApiKey) {
+      const resourceId = '35985678-0d79-46b4-9ed6-6f13308a1d24';
+      let url = `https://api.data.gov.in/resource/${resourceId}?api-key=${govApiKey}&format=json&limit=1000`;
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.records && data.records.length > 0) {
+          const uniqueMap = new Map();
+          
+          let records = data.records;
+
+          if (city) {
+            const lowerCity = city.toLowerCase();
+            records = records.filter(r => 
+              (r.Market || '').toLowerCase().includes(lowerCity) || 
+              (r.State || '').toLowerCase().includes(lowerCity) ||
+              (r.District || '').toLowerCase().includes(lowerCity)
+            );
+          }
+
+          records.forEach(r => {
+            const key = `${r.Commodity}-${r.Market}`.toLowerCase();
+            if (!uniqueMap.has(key)) {
+              uniqueMap.set(key, {
+                commodity: r.Commodity || r.commodity,
+                market: r.Market || r.market,
+                state: r.State || r.state,
+                min_price: r.Min_Price || r.min_price,
+                max_price: r.Max_Price || r.max_price,
+                modal_price: r.Modal_Price || r.modal_price,
+                trend: Math.random() > 0.5 ? 'up' : 'down'
+              });
+            }
+          });
+
+          const finalRecords = Array.from(uniqueMap.values());
+          
+          if (finalRecords.length > 0) {
+            return res.json({ source: 'datagov', records: finalRecords });
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.log("Gov API error, using mock data:", error.message);
+  }
+
+  // Fallback to Mock Data (Filtered by city if possible)
   let filteredMock = [
     { commodity: "Wheat", min_price: "2100", max_price: "2300", modal_price: "2200", market: "Lucknow", state: "Uttar Pradesh", trend: "up" },
     { commodity: "Rice", min_price: "3500", max_price: "4200", modal_price: "3850", market: "Lucknow", state: "Uttar Pradesh", trend: "up" },
     { commodity: "Potato", min_price: "1200", max_price: "1600", modal_price: "1400", market: "Indore", state: "Madhya Pradesh", trend: "down" },
-    { commodity: "Tomato", min_price: "1800", max_price: "2500", modal_price: "2100", market: "Agra", state: "Uttar Pradesh", trend: "up" }
+    { commodity: "Soyabean", min_price: "4200", max_price: "4600", modal_price: "4450", market: "Indore", state: "Madhya Pradesh", trend: "down" },
+    { commodity: "Cotton", min_price: "7000", max_price: "8000", modal_price: "7500", market: "Bhopal", state: "Madhya Pradesh", trend: "up" },
+    { commodity: "Mustard", min_price: "5400", max_price: "5800", modal_price: "5600", market: "Delhi", state: "Delhi", trend: "down" },
+    { commodity: "Tomato", min_price: "1800", max_price: "2500", modal_price: "2100", market: "Agra", state: "Uttar Pradesh", trend: "up" },
+    { commodity: "Apple", min_price: "8000", max_price: "12000", modal_price: "10000", market: "Shimla", state: "Himachal Pradesh", trend: "up" },
+    { commodity: "Mango", min_price: "3000", max_price: "5000", modal_price: "4000", market: "Varanasi", state: "Uttar Pradesh", trend: "up" },
   ];
 
   if (city) {
-    const generated = [];
-    const commodities = ["Tomato", "Onion", "Potato", "Wheat", "Rice"];
-    commodities.forEach(c => {
-      const basePrice = 1000 + Math.floor(Math.random() * 4000);
-      generated.push({
-        commodity: c,
-        min_price: (basePrice - 200).toString(),
-        max_price: (basePrice + 300).toString(),
-        modal_price: basePrice.toString(),
-        market: city.split(',')[0],
-        state: "Local State",
-        trend: Math.random() > 0.5 ? "up" : "down"
-      });
-    });
-    filteredMock = generated;
+    const lowerCity = city.toLowerCase();
+    const citySpecific = filteredMock.filter(m => 
+      m.market.toLowerCase().includes(lowerCity) || 
+      m.state.toLowerCase().includes(lowerCity)
+    );
+    if (citySpecific.length > 0) filteredMock = citySpecific;
   }
+
   res.json({ source: 'mock', records: filteredMock });
 });
 

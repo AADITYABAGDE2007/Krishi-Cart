@@ -7,6 +7,7 @@ import { useLocation } from '../context/LocationContext';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
+import SmartSell from '../components/SmartSell';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -33,6 +34,7 @@ const ConsumerMarketplace = () => {
   const [farmerComment, setFarmerComment] = useState('');
   const [isSubmittingRating, setIsSubmittingRating] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [showSmartBuy, setShowSmartBuy] = useState(false);
   const [mandiPrices, setMandiPrices] = useState([]);
   const [dataSource, setDataSource] = useState('mock');
 
@@ -172,6 +174,42 @@ const ConsumerMarketplace = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-50 via-transparent to-transparent md:block hidden"></div>
             </div>
           </div>
+        </div>
+
+        {/* Smart Buy Banner/Toggle */}
+        <div className="mb-12">
+          {!showSmartBuy ? (
+            <div className="bg-emerald-700 rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between shadow-xl shadow-emerald-900/20 text-white relative overflow-hidden">
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+              <div className="relative z-10 max-w-xl mb-6 md:mb-0">
+                <h3 className="text-3xl font-black mb-2 flex items-center gap-3">
+                  <Zap className="w-8 h-8 text-yellow-300" /> Unlock Smart Bulk Deals
+                </h3>
+                <p className="text-emerald-100 font-medium">Buy produce directly from verified farmers in bulk and get exclusive dynamic discounts. Perfect for restaurants, retailers, and large families.</p>
+              </div>
+              <button 
+                onClick={() => setShowSmartBuy(true)}
+                className="relative z-10 bg-white text-emerald-800 hover:bg-emerald-50 px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg whitespace-nowrap"
+              >
+                Explore Smart Buy
+              </button>
+            </div>
+          ) : (
+            <div className="relative">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+                  <Zap className="w-6 h-6 text-emerald-600" /> Active Smart Deals
+                </h3>
+                <button 
+                  onClick={() => setShowSmartBuy(false)}
+                  className="text-slate-500 hover:text-slate-700 font-bold text-sm flex items-center gap-1"
+                >
+                  <X className="w-4 h-4" /> Close Deals
+                </button>
+              </div>
+              <SmartSell mode="buy" />
+            </div>
+          )}
         </div>
 
         {/* Section Heading */}
