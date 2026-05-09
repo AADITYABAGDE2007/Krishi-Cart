@@ -17,8 +17,10 @@ const Navbar = () => {
   const isAuthPage = routeLocation.pathname === '/login' || routeLocation.pathname === '/signup' || routeLocation.pathname === '/forgot-password';
 
   const toggleLanguage = () => {
-    const newLang = i18n.language === 'en' ? 'hi' : 'en';
-    i18n.changeLanguage(newLang);
+    const langs = ['en', 'hi', 'mr'];
+    const currentIndex = langs.indexOf(i18n.language);
+    const nextLang = langs[(currentIndex + 1) % langs.length] || 'en';
+    i18n.changeLanguage(nextLang);
   };
 
   return (

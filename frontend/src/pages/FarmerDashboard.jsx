@@ -5,6 +5,7 @@ import { io } from 'socket.io-client';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from '../context/LocationContext';
 import SmartSell from '../components/SmartSell';
+import { FarmerAnalytics } from '../components/FarmerAnalytics';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -34,7 +35,7 @@ const FarmerDashboard = () => {
   const [inventory, setInventory] = useState([]);
   const [orders, setOrders] = useState([]);
   const [mandiPrices, setMandiPrices] = useState([]);
-  const [newItem, setNewItem] = useState({ name: '', qty: '', price: '', image: '' });
+  const [newItem, setNewItem] = useState({ name: '', qty: '', price: '', image: '', isOrganic: false });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [suggestedPrice, setSuggestedPrice] = useState(null);
   const [selectedOrderMap, setSelectedOrderMap] = useState(null);
@@ -137,7 +138,7 @@ const FarmerDashboard = () => {
           body: JSON.stringify({...newItem, location: selectedLocation, lat, lng})
         });
         if (res.ok) {
-          setNewItem({ name: '', qty: '', price: '', image: '' });
+          setNewItem({ name: '', qty: '', price: '', image: '', isOrganic: false });
           setSuggestedPrice(null);
           if (document.getElementById('image-upload')) document.getElementById('image-upload').value = '';
           fetchProducts(); 
@@ -480,6 +481,21 @@ const FarmerDashboard = () => {
                 </div>
               </div>
 
+              {/* Organic Badge Checkbox */}
+              <div className="md:col-span-3 flex items-center gap-3 bg-emerald-50 p-4 rounded-xl border border-emerald-100 mt-2">
+                <input 
+                  type="checkbox" 
+                  id="organic"
+                  className="w-5 h-5 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+                  checked={newItem.isOrganic}
+                  onChange={(e) => setNewItem({...newItem, isOrganic: e.target.checked})}
+                />
+                <label htmlFor="organic" className="font-bold text-emerald-900 cursor-pointer flex flex-col">
+                  <span className="flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-emerald-600" /> Verified Organic Produce</span>
+                  <span className="text-xs text-emerald-700 font-medium mt-0.5">Displays a green verified badge to customers.</span>
+                </label>
+              </div>
+
               <div className="md:col-span-3 mt-4">
                 <button type="submit" className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3.5 rounded-xl transition-all shadow-md shadow-primary/20">
                   {t('farmer.publish')}
@@ -691,6 +707,11 @@ const FarmerDashboard = () => {
           </div>
         </div>
 
+      </div>
+
+      {/* Farmer Analytics Dashboard (Financial & Impact) */}
+      <div className="mt-8 mb-4">
+         <FarmerAnalytics />
       </div>
 
       {/* Customer Location Map Modal */}

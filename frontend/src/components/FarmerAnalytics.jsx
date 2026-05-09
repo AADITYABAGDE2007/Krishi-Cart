@@ -1,0 +1,144 @@
+import React, { useState } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { TrendingUp, Calculator, FileText, BadgePercent, MessageCircle, PhoneCall, ShieldCheck } from 'lucide-react';
+
+export const FarmerAnalytics = () => {
+  const [cost, setCost] = useState('');
+  const [sellingPrice, setSellingPrice] = useState('');
+  const [profit, setProfit] = useState(null);
+  const [loanEligibility, setLoanEligibility] = useState(null);
+
+  const calculateProfit = () => {
+    const c = parseFloat(cost);
+    const s = parseFloat(sellingPrice);
+    if (!c || !s) return;
+    const p = s - c;
+    const margin = ((p / c) * 100).toFixed(1);
+    setProfit({ value: p.toFixed(2), margin });
+    
+    // Simple Loan Scoring AI Mock
+    const score = Math.min(95, 40 + (margin * 0.8) + (s * 0.05));
+    let status = 'Low';
+    if (score > 75) status = 'Excellent';
+    else if (score > 60) status = 'Good';
+    else if (score > 45) status = 'Fair';
+    
+    setLoanEligibility({ score: score.toFixed(0), status });
+  };
+
+  const salesData = [
+    { name: 'Mon', sales: 4000, demand: 2400 },
+    { name: 'Tue', sales: 3000, demand: 1398 },
+    { name: 'Wed', sales: 2000, demand: 9800 },
+    { name: 'Thu', sales: 2780, demand: 3908 },
+    { name: 'Fri', sales: 1890, demand: 4800 },
+    { name: 'Sat', sales: 2390, demand: 3800 },
+    { name: 'Sun', sales: 3490, demand: 4300 },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Analytics Chart */}
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+        <div className="flex items-center gap-2 mb-6">
+          <TrendingUp className="w-6 h-6 text-emerald-600" />
+          <h3 className="text-xl font-black text-slate-900">Smart Sales Analytics</h3>
+        </div>
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={salesData}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
+              <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
+              <RechartsTooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+              <Line type="monotone" dataKey="sales" stroke="#10b981" strokeWidth={3} dot={{r: 4}} activeDot={{r: 6}} />
+              <Line type="monotone" dataKey="demand" stroke="#3b82f6" strokeWidth={3} dot={{r: 4}} activeDot={{r: 6}} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Financial Tools */}
+        <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-100">
+          <div className="flex items-center gap-2 mb-6">
+            <Calculator className="w-6 h-6 text-emerald-700" />
+            <h3 className="text-xl font-black text-emerald-900">Financial Tools & Loans</h3>
+          </div>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-emerald-800 mb-1">Total Cost (₹)</label>
+                <input type="number" value={cost} onChange={e=>setCost(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-emerald-200 outline-none focus:ring-2 focus:ring-emerald-500/20" placeholder="e.g. 500" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-emerald-800 mb-1">Selling Price (₹)</label>
+                <input type="number" value={sellingPrice} onChange={e=>setSellingPrice(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-emerald-200 outline-none focus:ring-2 focus:ring-emerald-500/20" placeholder="e.g. 800" />
+              </div>
+            </div>
+            <button onClick={calculateProfit} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl transition-colors">
+              Calculate Profit & Loan Score
+            </button>
+            
+            {profit && (
+              <div className="mt-4 p-4 bg-white rounded-2xl shadow-sm border border-emerald-100 flex justify-between items-center">
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase">Estimated Profit</p>
+                  <p className="text-2xl font-black text-emerald-600">₹{profit.value}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-bold text-slate-500 uppercase">Margin</p>
+                  <p className="text-xl font-bold text-slate-800">{profit.margin}%</p>
+                </div>
+              </div>
+            )}
+            {loanEligibility && (
+              <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex justify-between items-center">
+                <div>
+                  <p className="text-xs font-bold text-blue-800 uppercase flex items-center gap-1"><FileText className="w-3 h-3"/> AI Loan Eligibility Score</p>
+                  <p className="text-2xl font-black text-blue-600">{loanEligibility.score}/100</p>
+                </div>
+                <span className={`px-3 py-1 rounded-lg text-xs font-bold ${loanEligibility.status==='Excellent'?'bg-emerald-100 text-emerald-700':loanEligibility.status==='Good'?'bg-blue-100 text-blue-700':'bg-yellow-100 text-yellow-700'}`}>
+                  {loanEligibility.status}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Community & Offline Tools */}
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <PhoneCall className="w-6 h-6 text-indigo-500" />
+              <h3 className="text-lg font-black text-slate-900">Offline SMS Orders</h3>
+            </div>
+            <p className="text-sm text-slate-600 font-medium mb-3">
+              Receive order confirmations directly via SMS when internet is unavailable.
+            </p>
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg w-max">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              SMS Gateway Active
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-start gap-4">
+            <div className="h-12 w-12 bg-amber-50 rounded-2xl flex items-center justify-center shrink-0">
+              <MessageCircle className="w-6 h-6 text-amber-500" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-slate-900 mb-1">Farmer Community Chat</h3>
+              <p className="text-sm text-slate-600 font-medium mb-3">Connect with 500+ local farmers for advice and mandi updates.</p>
+              <button className="text-sm font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 px-4 py-2 rounded-xl transition-colors">
+                Join Discussion
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

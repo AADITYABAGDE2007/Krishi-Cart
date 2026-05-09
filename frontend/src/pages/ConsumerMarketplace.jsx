@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect, no-unused-vars */
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, ShoppingCart, IndianRupee, MapPin, QrCode, X, User, Clock, CheckCircle, ArrowRight, ChevronRight, TrendingUp, TrendingDown, Zap } from 'lucide-react';
+import { Search, Filter, ShoppingCart, IndianRupee, MapPin, QrCode, X, User, Clock, CheckCircle, ArrowRight, ChevronRight, TrendingUp, TrendingDown, Zap, Sparkles, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from '../context/LocationContext';
 import 'leaflet/dist/leaflet.css';
@@ -274,9 +274,16 @@ const ConsumerMarketplace = () => {
                       alt={product.name} 
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />
-                    <div className="absolute top-3 left-3 flex items-center gap-1 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-lg z-10">
-                       <div className="h-1 w-1 rounded-full bg-white animate-pulse"></div>
-                       LIVE
+                    <div className="absolute top-3 left-3 flex items-center gap-2 z-10">
+                      <div className="flex items-center gap-1 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-lg">
+                         <div className="h-1 w-1 rounded-full bg-white animate-pulse"></div>
+                         LIVE
+                      </div>
+                      {product.isOrganic && (
+                        <div className="flex items-center gap-1 bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-lg border border-emerald-400">
+                          <Sparkles className="w-3 h-3" /> ORGANIC
+                        </div>
+                      )}
                     </div>
                     {/* Traceability Float Button */}
                     <button 
