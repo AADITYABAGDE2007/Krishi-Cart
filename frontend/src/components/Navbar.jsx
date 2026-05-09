@@ -103,16 +103,6 @@ const Navbar = () => {
                         <User className="w-5 h-5 group-hover:scale-110 transition-transform" />
                       )}
                     </Link>
-                    <button 
-                      onClick={() => {
-                        logout();
-                        navigate('/login');
-                      }}
-                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                      title="Logout"
-                    >
-                      <LogOut className="w-5 h-5" />
-                    </button>
                   </div>
                 )}
                 
