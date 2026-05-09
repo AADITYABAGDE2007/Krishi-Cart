@@ -306,15 +306,18 @@ const ConsumerMarketplace = () => {
                           {product.farmer.charAt(0)}
                        </div>
                        <div className="flex flex-col">
-                          <button 
-                            onClick={() => setRatingFarmer(product)}
-                            className="text-sm font-bold text-slate-800 hover:text-emerald-700 text-left"
-                          >
+                          <span className="text-sm font-bold text-slate-800">
                             {product.farmer}
-                          </button>
-                          <span className="text-[10px] font-medium text-slate-400 flex items-center gap-0.5">
+                          </span>
+                          <span className="text-[10px] font-medium text-slate-400 flex items-center gap-0.5 mb-1">
                              <MapPin className="w-3 h-3" /> {product.location}
                           </span>
+                          <button 
+                            onClick={() => setRatingFarmer(product)}
+                            className="text-[10px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded flex items-center gap-1 w-max transition-colors"
+                          >
+                            <Star className="w-3 h-3 fill-current" /> {t('marketplace.rate')}
+                          </button>
                        </div>
                     </div>
                     <button 
