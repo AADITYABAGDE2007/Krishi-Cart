@@ -53,9 +53,14 @@ io.on('connection', (socket) => {
 // Helper for SMS Notification (Fast2SMS API)
 async function sendSMS(phoneNumber, message) {
   try {
+    if (!process.env.FAST2SMS_API_KEY || process.env.FAST2SMS_API_KEY === 'your_api_key_here') {
+      console.log(`\n📱 [MOCK SMS] To: ${phoneNumber}`);
+      console.log(`✉️  Message: ${message}`);
+      console.log(`(Set FAST2SMS_API_KEY in .env to send real SMS)\n`);
+      return;
+    }
+
     const cleanNumber = phoneNumber.replace('+91', '').replace(/\s+/g, '').trim();
-    
-    // For free accounts, fast2sms might have message length restrictions, but let's try
     const response = await axios.get('https://www.fast2sms.com/dev/bulkV2', {
       params: {
         authorization: process.env.FAST2SMS_API_KEY,
@@ -68,15 +73,9 @@ async function sendSMS(phoneNumber, message) {
     
     console.log(`\n================= SMS GATEWAY =================`);
     console.log(`✅ Asli SMS Bhej diya gaya hai: ${cleanNumber}`);
-    console.log(`📱 Response:`, response.data.message);
     console.log(`===============================================\n`);
   } catch (error) {
-    console.error('\n❌ SMS Bhejne me error aayi:');
-    if (error.response) {
-      console.error(error.response.data);
-    } else {
-      console.error(error.message);
-    }
+    console.error('\n❌ SMS Bhejne me error aayi (Check API Key limit):', error.message);
   }
 }
 
@@ -206,16 +205,17 @@ app.post('/api/orders', async (req, res) => {
     
     await newOrder.save();
 
-    const deliveryCount = await Delivery.countDocuments();
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
     const newDelivery = new Delivery({
       deliveryId: `#DEL-${Date.now().toString().slice(-4)}`,
       orderId: newOrder.orderId,
       item: newOrder.item,
       pickup: product.location,
-      dropoff: 'Customer Location',
+      dropoff: req.body.location || 'Customer Location',
       distance: `${distance.toFixed(1)} km`,
       earnings: `₹${(distance * 5 + 20).toFixed(0)}`,
-      phone: '+919876543210'
+      status: 'Searching for Partner',
+      otp: otp
     });
     
     await newDelivery.save();
@@ -247,12 +247,51 @@ app.get('/api/deliveries', async (req, res) => {
   }
 });
 
+app.get('/api/deliveries/order/:orderId', async (req, res) => {
+  try {
+    const delivery = await Delivery.findOne({ orderId: req.params.orderId });
+    if (delivery) {
+      res.json({...delivery.toObject(), id: delivery.deliveryId});
+    } else {
+      res.status(404).json({ error: 'Delivery not found for this order' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch delivery details' });
+  }
+});
+
+app.put('/api/deliveries/:id/accept', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { partnerName, phone, vehicleNo, lat, lng } = req.body;
+    
+    const delivery = await Delivery.findOneAndUpdate(
+      { deliveryId: id, status: 'Searching for Partner' }, 
+      { status: 'Accepted', partnerName, phone, vehicleNo, partnerLat: lat, partnerLng: lng }, 
+      { new: true }
+    );
+    
+    if (delivery) {
+      const formatted = {...delivery.toObject(), id: delivery.deliveryId};
+      io.emit('delivery_update', formatted);
+      res.json(formatted);
+    } else {
+      res.status(400).json({ error: 'Delivery already accepted by someone else or not found' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to accept delivery' });
+  }
+});
+
 app.put('/api/deliveries/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, pickupImage } = req.body;
     
-    const delivery = await Delivery.findOneAndUpdate({ deliveryId: id }, { status: status }, { new: true });
+    const updateData = { status: status };
+    if (pickupImage) updateData.pickupImage = pickupImage;
+
+    const delivery = await Delivery.findOneAndUpdate({ deliveryId: id }, updateData, { new: true });
     
     if (delivery) {
       const formatted = {...delivery.toObject(), id: delivery.deliveryId};
@@ -263,6 +302,34 @@ app.put('/api/deliveries/:id/status', async (req, res) => {
     }
   } catch (err) {
     res.status(500).json({ error: 'Failed to update delivery status' });
+  }
+});
+
+app.put('/api/deliveries/:id/verify-otp', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { otp } = req.body;
+    
+    const delivery = await Delivery.findOne({ deliveryId: id });
+    if (!delivery) return res.status(404).json({ error: 'Delivery not found' });
+    
+    if (delivery.otp === otp || otp === '0000') { // 0000 as master override for testing
+      delivery.status = 'Delivered';
+      await delivery.save();
+      
+      // Update the main Order status as well so Farmer dashboard updates
+      if (delivery.orderId) {
+        await Order.findOneAndUpdate({ orderId: delivery.orderId }, { status: 'Delivered' });
+      }
+
+      const formatted = {...delivery.toObject(), id: delivery.deliveryId};
+      io.emit('delivery_update', formatted);
+      res.json({ success: true, delivery: formatted });
+    } else {
+      res.status(400).json({ error: 'Invalid OTP' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to verify OTP' });
   }
 });
 

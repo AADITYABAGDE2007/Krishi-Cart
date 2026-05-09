@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { MessageSquare, X, Send, Star } from 'lucide-react';
 
 const FeedbackModal = () => {

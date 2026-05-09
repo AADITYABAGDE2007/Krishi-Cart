@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable react-hooks/set-state-in-effect, no-unused-vars */
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Filter, ShoppingCart, IndianRupee, MapPin, QrCode, X, User, Clock, CheckCircle, ArrowRight, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -35,15 +36,7 @@ const ConsumerMarketplace = () => {
   const [mandiPrices, setMandiPrices] = useState([]);
   const [dataSource, setDataSource] = useState('mock');
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  useEffect(() => {
-    fetchMandiPrices();
-  }, [selectedLocation]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       const res = await fetch('http://localhost:5000/api/products');
       const data = await res.json();
@@ -51,9 +44,9 @@ const ConsumerMarketplace = () => {
     } catch (error) {
       console.error('Error fetching products:', error);
     }
-  };
+  }, []);
 
-  const fetchMandiPrices = async () => {
+  const fetchMandiPrices = useCallback(async () => {
     try {
       const res = await fetch(`http://localhost:5000/api/mandi-prices?city=${encodeURIComponent(selectedLocation || 'Lucknow')}`);
       const data = await res.json();
@@ -64,7 +57,15 @@ const ConsumerMarketplace = () => {
     } catch (error) {
       console.error('Error fetching mandi prices:', error);
     }
-  };
+  }, [selectedLocation]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  useEffect(() => {
+    fetchMandiPrices();
+  }, [selectedLocation, fetchMandiPrices]);
 
   const handleAddToCart = (product) => {
     navigate('/checkout', { state: { product } });

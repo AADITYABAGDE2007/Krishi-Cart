@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+/* eslint-disable no-unused-vars, react-hooks/set-state-in-effect, react-refresh/only-export-components */
+import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Truck, CreditCard, ShieldCheck, MapPin, AlertCircle, TrendingDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -42,17 +43,29 @@ const Checkout = () => {
     setIsProcessing(true);
     setOrderError('');
     
-    // Simulate customer location slightly offset from farmer for a realistic distance
-    // In a real app, this would come from the user's GPS/browser
-    const buyerLat = (product.lat || 20.0) + (Math.random() * 0.4 - 0.2); 
-    const buyerLng = (product.lng || 73.0) + (Math.random() * 0.4 - 0.2);
+    // Get actual customer location via GPS
+    const getBuyerLocation = () => {
+      return new Promise((resolve) => {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            (err) => resolve({ lat: (product.lat || 20.0) + 0.1, lng: (product.lng || 73.0) + 0.1 }),
+            { enableHighAccuracy: true }
+          );
+        } else {
+          resolve({ lat: (product.lat || 20.0) + 0.1, lng: (product.lng || 73.0) + 0.1 });
+        }
+      });
+    };
+
+    const buyerLoc = await getBuyerLocation();
 
     const orderData = {
       productId: product.id,
       quantity: quantity,
       buyer: user?.name || 'Current Consumer',
-      buyerLat,
-      buyerLng,
+      buyerLat: buyerLoc.lat,
+      buyerLng: buyerLoc.lng,
       amount: total,
       location: selectedLocation,
       paymentMethod: paymentMethod
@@ -68,7 +81,8 @@ const Checkout = () => {
       const data = await res.json();
       
       if (res.ok) {
-        setStep(3);
+        // Redirect directly to the live tracking page
+        navigate(`/track/${encodeURIComponent(data.order.id)}`);
       } else {
         setOrderError(data.error || 'Failed to place order.');
       }

@@ -1,4 +1,5 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+/* eslint-disable no-unused-vars, react-hooks/set-state-in-effect, react-refresh/only-export-components */
+import { createContext, useState, useContext, useEffect } from 'react';
 
 const LocationContext = createContext();
 

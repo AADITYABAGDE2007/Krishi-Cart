@@ -1,4 +1,4 @@
-import React from 'react';
+/* eslint-disable no-unused-vars, react-hooks/set-state-in-effect, react-refresh/only-export-components */
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin, Leaf, Globe, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+/* eslint-disable no-unused-vars, react-hooks/set-state-in-effect, react-refresh/only-export-components */
+import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 

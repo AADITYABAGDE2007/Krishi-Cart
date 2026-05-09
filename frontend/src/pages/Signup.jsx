@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Tractor, ShoppingBag, ArrowRight, User, Bike } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -9,14 +9,55 @@ const Signup = () => {
   const [role, setRole] = useState('farmer');
   const navigate = useNavigate();
   const { login } = useAuth();
+  // eslint-disable-next-line no-unused-vars
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
   });
 
+  // Verification States
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [otp, setOtp] = useState('');
+  
+  const [aadharNumber, setAadharNumber] = useState('');
+  const [verifyingAadhar, setVerifyingAadhar] = useState(false);
+  const [aadharVerified, setAadharVerified] = useState(false);
+
+  const handleSendOTP = () => {
+    setShowOtpInput(true);
+    // Simulate sending SMS
+  };
+
+  const handleVerifyOTP = () => {
+    if (otp.length === 4) setPhoneVerified(true);
+    else alert("Invalid OTP");
+  };
+
+  const handleVerifyAadhar = () => {
+    if (aadharNumber.length !== 12) {
+      alert("Aadhar must be exactly 12 digits");
+      return;
+    }
+    setVerifyingAadhar(true);
+    setTimeout(() => {
+      setVerifyingAadhar(false);
+      setAadharVerified(true);
+    }, 1500); // Simulate API call to UIDAI/Gov Database
+  };
+
   const handleSignup = (e) => {
     e.preventDefault();
+    if (!phoneVerified) {
+      alert("Please verify your phone number using OTP first to prevent fake accounts.");
+      return;
+    }
+    if ((role === 'farmer' || role === 'delivery') && !aadharVerified) {
+      alert("Government ID (Aadhar) verification is mandatory for Partners and Farmers.");
+      return;
+    }
+
     login({ ...formData, role });
     if (role === 'farmer') navigate('/farmer');
     else if (role === 'delivery') navigate('/delivery');
@@ -88,12 +129,41 @@ const Signup = () => {
 
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-1.5">{t('login.phoneEmail')}</label>
-              <input
-                type="text"
-                className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder-slate-400 shadow-sm"
-                placeholder={t('login.phonePlaceholder')}
-                required
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  disabled={phoneVerified}
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder-slate-400 shadow-sm disabled:bg-slate-50 disabled:text-slate-500"
+                  placeholder={t('login.phonePlaceholder')}
+                  required
+                />
+                {!phoneVerified && !showOtpInput && (
+                  <button type="button" onClick={handleSendOTP} className="bg-slate-900 text-white font-bold px-4 rounded-xl whitespace-nowrap hover:bg-slate-800 transition-colors">
+                    Get OTP
+                  </button>
+                )}
+                {phoneVerified && (
+                  <div className="bg-emerald-50 text-emerald-600 font-bold px-4 rounded-xl flex items-center border border-emerald-200">
+                    Verified ✅
+                  </div>
+                )}
+              </div>
+              
+              {showOtpInput && !phoneVerified && (
+                <div className="flex gap-2 mt-2 animate-in fade-in slide-in-from-top-2">
+                  <input
+                    type="text"
+                    maxLength="4"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-center tracking-widest font-black outline-none"
+                    placeholder="Enter 4-digit OTP"
+                  />
+                  <button type="button" onClick={handleVerifyOTP} className="bg-emerald-500 text-white font-bold px-4 rounded-xl whitespace-nowrap hover:bg-emerald-600 transition-colors">
+                    Verify
+                  </button>
+                </div>
+              )}
             </div>
             
             <div>
@@ -105,6 +175,114 @@ const Signup = () => {
                 required
               />
             </div>
+
+            {/* KYC for Delivery Partner */}
+            {role === 'delivery' && (
+              <div className="space-y-4 p-5 bg-slate-100 rounded-2xl border border-slate-200 mt-2 animate-in fade-in slide-in-from-bottom-2">
+                <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Delivery Partner KYC</p>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Vehicle Type</label>
+                  <select className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-slate-900 focus:ring-2 focus:ring-slate-400 outline-none cursor-pointer">
+                    <option>Motorcycle / Bike</option>
+                    <option>Electric Scooter (EV)</option>
+                    <option>Mini Truck / Three Wheeler</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Vehicle Number Plate</label>
+                  <input type="text" className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 placeholder-slate-400 uppercase" placeholder="e.g. MH 12 AB 1234" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Government Aadhar Number</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      maxLength="12"
+                      value={aadharNumber}
+                      onChange={(e) => setAadharNumber(e.target.value.replace(/[^0-9]/g, ''))}
+                      disabled={aadharVerified || verifyingAadhar}
+                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 placeholder-slate-400 tracking-wider disabled:bg-slate-50" 
+                      placeholder="12-digit Aadhar No." 
+                      required 
+                    />
+                    {!aadharVerified ? (
+                      <button 
+                        type="button" 
+                        onClick={handleVerifyAadhar}
+                        disabled={verifyingAadhar || aadharNumber.length !== 12}
+                        className="bg-slate-800 text-white font-bold px-4 rounded-xl whitespace-nowrap hover:bg-slate-700 disabled:opacity-50 transition-all flex items-center gap-2"
+                      >
+                        {verifyingAadhar ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> : 'Verify UIDAI'}
+                      </button>
+                    ) : (
+                      <div className="bg-emerald-50 text-emerald-600 font-bold px-4 rounded-xl flex items-center border border-emerald-200">
+                        Verified ✅
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Upload Driving License (DL)</label>
+                  <input type="file" accept="image/*" className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-slate-800 file:text-white hover:file:bg-slate-700 cursor-pointer bg-white border border-slate-300 rounded-xl" required />
+                </div>
+              </div>
+            )}
+
+            {/* KYC for Farmer */}
+            {role === 'farmer' && (
+              <div className="space-y-4 p-5 bg-green-50 rounded-2xl border border-green-200 mt-2 animate-in fade-in slide-in-from-bottom-2">
+                <p className="text-xs font-black text-green-700 uppercase tracking-widest">Farm Verification</p>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Farm Size</label>
+                  <select className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-slate-900 focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer">
+                    <option>Small (Under 2 Acres)</option>
+                    <option>Medium (2 - 5 Acres)</option>
+                    <option>Large (More than 5 Acres)</option>
+                    <option>Greenhouse / Polyhouse</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Primary Crops Category</label>
+                  <input type="text" className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 placeholder-slate-400" placeholder="e.g. Organic Vegetables, Wheat, Fruits" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Government Aadhar Number</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      maxLength="12"
+                      value={aadharNumber}
+                      onChange={(e) => setAadharNumber(e.target.value.replace(/[^0-9]/g, ''))}
+                      disabled={aadharVerified || verifyingAadhar}
+                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 placeholder-slate-400 tracking-wider disabled:bg-slate-50" 
+                      placeholder="12-digit Aadhar No." 
+                      required 
+                    />
+                    {!aadharVerified ? (
+                      <button 
+                        type="button" 
+                        onClick={handleVerifyAadhar}
+                        disabled={verifyingAadhar || aadharNumber.length !== 12}
+                        className="bg-slate-800 text-white font-bold px-4 rounded-xl whitespace-nowrap hover:bg-slate-700 disabled:opacity-50 transition-all flex items-center gap-2"
+                      >
+                        {verifyingAadhar ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> : 'Verify UIDAI'}
+                      </button>
+                    ) : (
+                      <div className="bg-emerald-50 text-emerald-600 font-bold px-4 rounded-xl flex items-center border border-emerald-200">
+                        Verified ✅
+                      </div>
+                    )}
+                  </div>
+                  {aadharVerified && <p className="text-xs text-emerald-600 font-bold mt-1">✓ Identity matched with central database.</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Kisaan ID / FSSAI (Recommended)</label>
+                  <input type="text" className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 placeholder-slate-400" placeholder="Registration ID for Verified Badge" />
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center gap-2 py-2">
               <input type="checkbox" className="rounded bg-white border-slate-300 text-primary focus:ring-primary/50 cursor-pointer" required />

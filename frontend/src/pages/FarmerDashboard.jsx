@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { PlusCircle, Package, IndianRupee, TrendingUp, TrendingDown, CheckCircle, Clock, Sparkles, Mic, MapPin, Banknote, CreditCard, X } from 'lucide-react';
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useState, useEffect, useCallback } from 'react';
+import { PlusCircle, Package, IndianRupee, TrendingUp, TrendingDown, CheckCircle, Clock, Sparkles, Mic, MapPin, Banknote, CreditCard, X, Truck } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from '../context/LocationContext';
@@ -37,8 +38,43 @@ const FarmerDashboard = () => {
   const [suggestedPrice, setSuggestedPrice] = useState(null);
   const [selectedOrderMap, setSelectedOrderMap] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   const [isListening, setIsListening] = useState(false);
+  const [dataSource, setDataSource] = useState('mock');
+
+  const fetchProducts = useCallback(async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/products');
+      const data = await res.json();
+      setInventory(data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  }, []);
+
+  const fetchOrders = useCallback(async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/orders');
+      const data = await res.json();
+      setOrders(data);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    }
+  }, []);
+
+  const fetchMandiPrices = useCallback(async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/mandi-prices?city=${encodeURIComponent(selectedLocation)}`);
+      const data = await res.json();
+      setDataSource(data.source || 'mock');
+      if (data && data.records) {
+        setMandiPrices(data.records);
+      }
+    } catch (error) {
+      console.error('Error fetching mandi prices:', error);
+    }
+  }, [selectedLocation]);
 
   // Fetch data on mount
   useEffect(() => {
@@ -49,12 +85,12 @@ const FarmerDashboard = () => {
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
-  }, []);
+  }, [fetchProducts, fetchOrders]);
 
   // Fetch Mandi prices when location changes
   useEffect(() => {
     fetchMandiPrices();
-  }, [selectedLocation]);
+  }, [fetchMandiPrices, selectedLocation]);
 
   useEffect(() => {
     const socket = io('http://localhost:5000');
@@ -76,41 +112,6 @@ const FarmerDashboard = () => {
     return () => socket.disconnect();
   }, []);
 
-  const fetchProducts = async () => {
-    try {
-      const res = await fetch('http://localhost:5000/api/products');
-      const data = await res.json();
-      setInventory(data);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    }
-  };
-
-  const fetchOrders = async () => {
-    try {
-      const res = await fetch('http://localhost:5000/api/orders');
-      const data = await res.json();
-      setOrders(data);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-    }
-  };
-
-  const [dataSource, setDataSource] = useState('mock');
-
-  const fetchMandiPrices = async () => {
-    try {
-      const res = await fetch(`http://localhost:5000/api/mandi-prices?city=${encodeURIComponent(selectedLocation)}`);
-      const data = await res.json();
-      setDataSource(data.source || 'mock');
-      if (data && data.records) {
-        setMandiPrices(data.records);
-      }
-    } catch (error) {
-      console.error('Error fetching mandi prices:', error);
-    }
-  };
-
   const filteredMandiPrices = mandiPrices.filter(p => {
     const market = (p.market || '').toLowerCase();
     const city = (selectedLocation || '').toLowerCase();
@@ -125,20 +126,40 @@ const FarmerDashboard = () => {
     e.preventDefault();
     if (!newItem.name || !newItem.qty || !newItem.price) return;
     
-    try {
-      const res = await fetch('http://localhost:5000/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newItem)
-      });
-      if (res.ok) {
-        setNewItem({ name: '', qty: '', price: '', image: '' });
-        setSuggestedPrice(null);
-        document.getElementById('image-upload').value = '';
-        fetchProducts(); // Refresh list
+    const submitProduct = async (lat, lng) => {
+      try {
+        const res = await fetch('http://localhost:5000/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({...newItem, location: selectedLocation, lat, lng})
+        });
+        if (res.ok) {
+          setNewItem({ name: '', qty: '', price: '', image: '' });
+          setSuggestedPrice(null);
+          if (document.getElementById('image-upload')) document.getElementById('image-upload').value = '';
+          fetchProducts(); 
+          setNotification("Produce listed successfully with live location!");
+          setTimeout(() => setNotification(null), 3000);
+        }
+      } catch (error) {
+        console.error('Error adding product:', error);
       }
-    } catch (error) {
-      console.error('Error adding product:', error);
+    };
+
+    if (navigator.geolocation) {
+      setNotification("Fetching your exact farm location...");
+      navigator.geolocation.getCurrentPosition(
+        (pos) => submitProduct(pos.coords.latitude, pos.coords.longitude),
+        () => {
+          console.warn("Location permission denied, using default city coordinates.");
+          const [defaultLat, defaultLng] = getCoordinates(selectedLocation);
+          submitProduct(defaultLat, defaultLng);
+        },
+        { enableHighAccuracy: true }
+      );
+    } else {
+      const [defaultLat, defaultLng] = getCoordinates(selectedLocation);
+      submitProduct(defaultLat, defaultLng);
     }
   };
 
@@ -220,7 +241,7 @@ const FarmerDashboard = () => {
           <p className="text-slate-600 font-medium mt-1">{t('farmer.manage')}</p>
         </div>
         <div className="flex gap-4">
-           <button className="bg-yellow-50 text-yellow-700 border border-yellow-200 px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-yellow-100 transition-all shadow-sm">
+           <button onClick={() => setShowAnalytics(true)} className="bg-yellow-50 text-yellow-700 border border-yellow-200 px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-yellow-100 transition-all shadow-sm">
              <TrendingUp className="w-4 h-4" /> {t('farmer.analytics')}
            </button>
         </div>
@@ -516,11 +537,55 @@ const FarmerDashboard = () => {
         </div>
       )}
 
+      {/* Analytics Modal */}
+      {showAnalytics && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div>
+                <h3 className="text-xl font-black text-slate-900">Farm Analytics & Insights</h3>
+                <p className="text-sm text-slate-500">Your performance overview</p>
+              </div>
+              <button onClick={() => setShowAnalytics(false)} className="text-slate-400 hover:text-slate-600 bg-white border border-slate-200 rounded-full p-2"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-primary/5 p-5 rounded-2xl border border-primary/20">
+                <p className="text-slate-500 font-bold mb-1">Total Revenue</p>
+                <h4 className="text-3xl font-black text-primary flex items-center"><IndianRupee className="w-6 h-6" /> {orders.reduce((acc, o) => { const amt = parseInt((o.amount || '0').replace(/[^0-9]/g, '')); return acc + (isNaN(amt) ? 0 : amt); }, 0)}</h4>
+              </div>
+              <div className="bg-emerald-50 p-5 rounded-2xl border border-emerald-200">
+                <p className="text-slate-500 font-bold mb-1">Total Orders</p>
+                <h4 className="text-3xl font-black text-emerald-600">{orders.length}</h4>
+              </div>
+              <div className="bg-orange-50 p-5 rounded-2xl border border-orange-200">
+                <p className="text-slate-500 font-bold mb-1">Active Products</p>
+                <h4 className="text-3xl font-black text-orange-600">{inventory.length}</h4>
+              </div>
+            </div>
+            <div className="p-6 bg-slate-50 border-t border-slate-100">
+               <h4 className="font-bold text-slate-800 mb-4">Top Selling Items</h4>
+               <div className="space-y-3">
+                 {inventory.length > 0 ? inventory.slice(0, 3).map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                       <div className="flex items-center gap-3">
+                         <div className="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden border border-slate-100">
+                           <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                         </div>
+                         <p className="font-bold text-slate-800">{item.name}</p>
+                       </div>
+                       <span className="text-green-600 font-bold px-3 py-1 bg-green-50 rounded-lg text-sm border border-green-100">High Demand</span>
+                    </div>
+                 )) : (
+                    <p className="text-slate-500 text-sm">No items listed yet.</p>
+                 )}
+               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
-
-// Add Truck icon for the modal since it wasn't imported originally
-import { Truck } from 'lucide-react';
 
 export default FarmerDashboard;

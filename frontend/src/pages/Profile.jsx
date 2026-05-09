@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { User, Package, MapPin, Mail, Phone, Calendar, ChevronRight, ShoppingBag, Clock, CheckCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +7,7 @@ const Profile = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
-  const [purchaseHistory, setPurchaseHistory] = useState([
+  const [purchaseHistory] = useState([
     { id: '#ORD-102', item: 'Fresh Tomatoes (5kg)', date: '2026-04-25', status: 'Delivered', price: '₹100' },
     { id: '#ORD-101', item: 'Organic Potatoes (2kg)', date: '2026-04-20', status: 'Delivered', price: '₹30' },
     { id: '#ORD-099', item: 'Onions (3kg)', date: '2026-04-15', status: 'Delivered', price: '₹45' },

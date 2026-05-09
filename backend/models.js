@@ -32,8 +32,14 @@ const deliverySchema = new mongoose.Schema({
   dropoff: String,
   distance: String,
   earnings: String,
-  status: { type: String, default: 'Pending' },
-  phone: String
+  status: { type: String, default: 'Searching for Partner' },
+  phone: String,
+  partnerName: String,
+  vehicleNo: String,
+  partnerLat: Number,
+  partnerLng: Number,
+  otp: String,
+  pickupImage: String
 }, { timestamps: true });
 
 const feedbackSchema = new mongoose.Schema({

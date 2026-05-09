@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Mail, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

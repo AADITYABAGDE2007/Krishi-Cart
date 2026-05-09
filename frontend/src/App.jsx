@@ -1,10 +1,12 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import LandingPage from './pages/LandingPage';
 import ForgotPassword from './pages/ForgotPassword';
 import FarmerDashboard from './pages/FarmerDashboard';
 import ConsumerMarketplace from './pages/ConsumerMarketplace';
 import Checkout from './pages/Checkout';
+import TrackOrder from './pages/TrackOrder';
 import DeliveryDashboard from './pages/DeliveryDashboard';
 import Navbar from './components/Navbar';
 import FeedbackModal from './components/FeedbackModal';
@@ -20,8 +22,10 @@ const RootRedirect = () => {
     return <Navigate to="/farmer" replace />;
   } else if (isLoggedIn && user?.role?.toLowerCase() === 'delivery') {
     return <Navigate to="/delivery" replace />;
+  } else if (isLoggedIn) {
+    return <Navigate to="/consumer" replace />;
   }
-  return <Navigate to="/consumer" replace />;
+  return <LandingPage />;
 };
 
 const ProtectedRoute = ({ children, allowedRoles, blockRoles }) => {
@@ -76,6 +80,12 @@ function App() {
               <Route path="/checkout" element={
                 <ProtectedRoute allowedRoles={['consumer']}>
                   <Checkout />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/track/:orderId" element={
+                <ProtectedRoute allowedRoles={['consumer']}>
+                  <TrackOrder />
                 </ProtectedRoute>
               } />
 
