@@ -440,7 +440,31 @@ app.get('/api/mandi-prices', async (req, res) => {
       m.market.toLowerCase().includes(lowerCity) || 
       m.state.toLowerCase().includes(lowerCity)
     );
-    if (citySpecific.length > 0) filteredMock = citySpecific;
+    if (citySpecific.length > 0) {
+      filteredMock = citySpecific;
+    } else {
+      // Dynamic mock generation for cities not in our hardcoded list
+      const commodities = ["Tomato", "Onion", "Potato", "Wheat", "Rice", "Chana", "Mustard"];
+      const generated = [];
+      const numToGenerate = 3 + Math.floor(Math.random() * 3); // Generate 3 to 5 items
+      
+      const shuffled = commodities.sort(() => 0.5 - Math.random());
+      const selected = shuffled.slice(0, numToGenerate);
+      
+      selected.forEach(c => {
+        const basePrice = 1000 + Math.floor(Math.random() * 4000);
+        generated.push({
+          commodity: c,
+          min_price: (basePrice - 200).toString(),
+          max_price: (basePrice + 300).toString(),
+          modal_price: basePrice.toString(),
+          market: city.split(',')[0].trim(), // Use the city name
+          state: "Local State",
+          trend: Math.random() > 0.5 ? "up" : "down"
+        });
+      });
+      filteredMock = generated;
+    }
   }
 
   res.json({ source: 'mock', records: filteredMock });
