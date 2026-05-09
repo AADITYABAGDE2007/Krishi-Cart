@@ -9,6 +9,7 @@ const productSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   stock: String,
   image: String,
+  isOrganic: { type: Boolean, default: false },
   status: { type: String, default: 'In Stock' }
 }, { timestamps: true });
 

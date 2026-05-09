@@ -147,6 +147,7 @@ app.post('/api/products', async (req, res) => {
       lng: req.body.lng || 73.0,
       price: Number(req.body.price),
       stock: req.body.qty,
+      isOrganic: req.body.isOrganic || false,
       image: req.body.image || 'https://images.unsplash.com/photo-1595856417537-8848d56b063d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60'
     });
     const saved = await newProduct.save();
