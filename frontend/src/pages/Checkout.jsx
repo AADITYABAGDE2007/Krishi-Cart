@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Truck, CreditCard, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Truck, CreditCard, ShieldCheck, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../context/AuthContext';
+import { useLocation as useGlobalLocation } from '../context/LocationContext';
 
 const Checkout = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+  const { selectedLocation } = useGlobalLocation();
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('upi');
+
+  const returnRoute = user?.role === 'Farmer' ? '/farmer' : '/consumer';
 
   const product = location.state?.product || { 
     name: 'Fresh Tomatoes', 
@@ -23,8 +30,10 @@ const Checkout = () => {
     
     const orderData = {
       item: `${product.name} (${product.stock || '1 qty'})`,
-      buyer: 'Current Consumer',
-      amount: product.price + 50
+      buyer: user?.name || 'Current Consumer',
+      amount: product.price + 50,
+      location: selectedLocation,
+      paymentMethod: paymentMethod
     };
 
     try {
@@ -77,7 +86,7 @@ const Checkout = () => {
           </div>
 
           <button 
-            onClick={() => navigate('/consumer')}
+            onClick={() => navigate(returnRoute)}
             className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3.5 rounded-xl transition-all shadow-md"
           >
             {t('checkout.continue')}
@@ -90,7 +99,7 @@ const Checkout = () => {
   return (
     <div className="min-h-[calc(100vh-64px)] bg-slate-50">
       <div className="max-w-4xl mx-auto px-4 py-10">
-        <Link to="/consumer" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 mb-8 transition-colors font-bold text-sm bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm">
+        <Link to={returnRoute} className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 mb-8 transition-colors font-bold text-sm bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm">
           <ArrowLeft className="w-4 h-4" /> {t('checkout.back')}
         </Link>
 
@@ -121,17 +130,38 @@ const Checkout = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <label className="flex items-center justify-between p-5 border-2 border-primary/50 bg-primary/5 rounded-2xl cursor-pointer shadow-sm relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-1.5 h-full bg-primary"></div>
+                  <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-100 flex items-start gap-3">
+                     <MapPin className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                     <div>
+                        <p className="font-bold text-blue-900 text-sm">Delivery Location</p>
+                        <p className="text-blue-700 text-sm">{selectedLocation}</p>
+                     </div>
+                  </div>
+
+                  <label className={`flex items-center justify-between p-5 border-2 rounded-2xl cursor-pointer shadow-sm relative overflow-hidden transition-all ${paymentMethod === 'upi' ? 'border-primary/50 bg-primary/5' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
+                    {paymentMethod === 'upi' && <div className="absolute top-0 left-0 w-1.5 h-full bg-primary"></div>}
                     <div className="flex items-center gap-4">
-                      <input type="radio" name="payment" className="text-primary focus:ring-primary w-5 h-5 bg-white border-slate-300 cursor-pointer" defaultChecked />
+                      <input 
+                        type="radio" 
+                        name="payment" 
+                        checked={paymentMethod === 'upi'}
+                        onChange={() => setPaymentMethod('upi')}
+                        className="text-primary focus:ring-primary w-5 h-5 bg-white border-slate-300 cursor-pointer" 
+                      />
                       <span className="font-extrabold text-slate-900 flex items-center gap-2"><CreditCard className="w-5 h-5 text-slate-500"/> {t('checkout.upi')}</span>
                     </div>
                     <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI" className="h-5 opacity-90" />
                   </label>
-                  <label className="flex items-center justify-between p-5 border border-slate-200 rounded-2xl cursor-pointer hover:bg-slate-50 transition-colors bg-white shadow-sm">
+                  <label className={`flex items-center justify-between p-5 border-2 rounded-2xl cursor-pointer shadow-sm relative overflow-hidden transition-all ${paymentMethod === 'cod' ? 'border-primary/50 bg-primary/5' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
+                    {paymentMethod === 'cod' && <div className="absolute top-0 left-0 w-1.5 h-full bg-primary"></div>}
                     <div className="flex items-center gap-4">
-                      <input type="radio" name="payment" className="text-primary focus:ring-primary w-5 h-5 bg-white border-slate-300 cursor-pointer" />
+                      <input 
+                        type="radio" 
+                        name="payment" 
+                        checked={paymentMethod === 'cod'}
+                        onChange={() => setPaymentMethod('cod')}
+                        className="text-primary focus:ring-primary w-5 h-5 bg-white border-slate-300 cursor-pointer" 
+                      />
                       <span className="font-bold text-slate-700">{t('checkout.cod')}</span>
                     </div>
                   </label>

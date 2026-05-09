@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Filter, ShoppingCart, IndianRupee, MapPin, QrCode, X, User, Clock, CheckCircle, ArrowRight, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from '../context/LocationContext';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -22,6 +23,7 @@ const getCoordinates = (locationName) => {
 const ConsumerMarketplace = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { selectedLocation } = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [products, setProducts] = useState([]);
   const [selectedTraceProduct, setSelectedTraceProduct] = useState(null);
@@ -35,8 +37,11 @@ const ConsumerMarketplace = () => {
 
   useEffect(() => {
     fetchProducts();
-    fetchMandiPrices();
   }, []);
+
+  useEffect(() => {
+    fetchMandiPrices();
+  }, [selectedLocation]);
 
   const fetchProducts = async () => {
     try {
@@ -50,7 +55,7 @@ const ConsumerMarketplace = () => {
 
   const fetchMandiPrices = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/mandi-prices?city=${encodeURIComponent('Lucknow')}`);
+      const res = await fetch(`http://localhost:5000/api/mandi-prices?city=${encodeURIComponent(selectedLocation || 'Lucknow')}`);
       const data = await res.json();
       setDataSource(data.source || 'mock');
       if (data && data.records) {
@@ -102,25 +107,32 @@ const ConsumerMarketplace = () => {
         
         {/* Live Mandi Rates Ticker */}
         {mandiPrices.length > 0 && (
-          <div className="mb-12 bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden flex flex-col md:flex-row items-stretch border-l-4 border-l-emerald-600">
-            <div className="bg-emerald-600 px-6 py-4 flex flex-col items-center justify-center gap-1 text-white font-bold whitespace-nowrap shadow-[4px_0_15px_rgba(0,0,0,0.05)] z-10">
+          <div className="mb-12 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row items-stretch relative">
+            <div className="bg-gradient-to-r from-emerald-600 to-emerald-800 px-6 py-4 flex flex-col items-center justify-center gap-1 text-white font-bold whitespace-nowrap shadow-[4px_0_15px_rgba(0,0,0,0.5)] z-10 md:w-auto w-full border-b md:border-b-0 md:border-r border-emerald-500/30">
               <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-yellow-300" /> Live Mandi Rates
+                <TrendingUp className="w-5 h-5 text-yellow-300" /> <span className="tracking-wide">LIVE RATES</span>
               </div>
-              <span className="text-[10px] uppercase tracking-widest opacity-80">Source: {dataSource}</span>
+              <span className="text-[10px] uppercase tracking-widest text-emerald-200">Source: {dataSource}</span>
             </div>
-            <div className="flex-1 overflow-x-auto whitespace-nowrap p-4 flex gap-4 scrollbar-hide items-center bg-slate-50/30">
-              {mandiPrices.map((price, idx) => (
-                <div key={idx} className="inline-flex items-center gap-3 bg-white border border-slate-100 rounded-2xl px-4 py-2 shadow-sm shrink-0">
-                  <span className="font-bold text-slate-800">{price.commodity}</span>
-                  <span className="text-xs text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">{price.market}</span>
-                  <span className="font-black text-emerald-700">₹{price.modal_price}</span>
-                  {price.trend === 'up' ? 
-                    <TrendingUp className="w-3.5 h-3.5 text-emerald-500" /> : 
-                    <TrendingDown className="w-3.5 h-3.5 text-red-400" />
-                  }
-                </div>
-              ))}
+            
+            <div className="flex-1 overflow-hidden relative flex items-center bg-slate-900">
+              {/* Fade gradients for smooth entering/exiting of marquee */}
+              <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-slate-900 to-transparent z-[5]"></div>
+              <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-slate-900 to-transparent z-[5]"></div>
+              
+              <div className="flex w-max animate-marquee py-4 pl-4 cursor-default">
+                {[...mandiPrices, ...mandiPrices].map((price, idx) => (
+                  <div key={idx} className="inline-flex items-center gap-3 bg-slate-800/80 border border-slate-700/50 rounded-2xl px-5 py-2.5 mx-2 shadow-inner backdrop-blur-sm group hover:bg-slate-800 transition-colors">
+                    <span className="font-bold text-slate-100 group-hover:text-white transition-colors">{price.commodity}</span>
+                    <span className="text-xs text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-800/30">{price.market}</span>
+                    <span className="font-black text-yellow-400 tracking-wide">₹{price.modal_price}</span>
+                    {price.trend === 'up' ? 
+                      <TrendingUp className="w-4 h-4 text-emerald-500" /> : 
+                      <TrendingDown className="w-4 h-4 text-red-500" />
+                    }
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

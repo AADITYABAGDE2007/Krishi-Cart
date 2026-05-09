@@ -8,8 +8,41 @@ import Checkout from './pages/Checkout';
 import Navbar from './components/Navbar';
 import FeedbackModal from './components/FeedbackModal';
 import Profile from './pages/Profile';
+import Footer from './components/Footer';
+import Chatbot from './components/Chatbot';
 import { LocationProvider } from './context/LocationContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+
+const RootRedirect = () => {
+  const { user, isLoggedIn } = useAuth();
+  if (isLoggedIn && user?.role?.toLowerCase() === 'farmer') {
+    return <Navigate to="/farmer" replace />;
+  }
+  return <Navigate to="/consumer" replace />;
+};
+
+const ProtectedRoute = ({ children, allowedRoles, blockRoles }) => {
+  const { user, isLoggedIn } = useAuth();
+  
+  if (isLoggedIn && user?.role) {
+    const role = user.role.toLowerCase();
+    
+    // Block specific roles from this route (e.g. block 'farmer' from consumer pages)
+    if (blockRoles && blockRoles.includes(role)) {
+      return <Navigate to={role === 'farmer' ? '/farmer' : '/consumer'} replace />;
+    }
+
+    // Only allow specific roles to access this route
+    if (allowedRoles && !allowedRoles.includes(role)) {
+      return <Navigate to={role === 'farmer' ? '/farmer' : '/consumer'} replace />;
+    }
+  } else if (!isLoggedIn && allowedRoles) {
+    // If not logged in and route requires authentication
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+};
 
 function App() {
   return (
@@ -20,17 +53,39 @@ function App() {
             <Navbar />
           <main className="flex-grow">
             <Routes>
-              <Route path="/" element={<Navigate to="/consumer" replace />} />
+              <Route path="/" element={<RootRedirect />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/farmer" element={<FarmerDashboard />} />
-              <Route path="/consumer" element={<ConsumerMarketplace />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/profile" element={<Profile />} />
+              
+              <Route path="/farmer" element={
+                <ProtectedRoute allowedRoles={['farmer']}>
+                  <FarmerDashboard />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/consumer" element={
+                <ProtectedRoute blockRoles={['farmer']}>
+                  <ConsumerMarketplace />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/checkout" element={
+                <ProtectedRoute allowedRoles={['consumer']}>
+                  <Checkout />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/profile" element={
+                <ProtectedRoute allowedRoles={['farmer', 'consumer']}>
+                  <Profile />
+                </ProtectedRoute>
+              } />
             </Routes>
           </main>
+          <Footer />
           <FeedbackModal />
+          <Chatbot />
         </div>
       </Router>
     </LocationProvider>

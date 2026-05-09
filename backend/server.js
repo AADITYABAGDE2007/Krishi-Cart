@@ -17,7 +17,8 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 io.on('connection', (socket) => {
   console.log('User connected');
@@ -30,6 +31,12 @@ io.on('connection', (socket) => {
 let products = [
   { id: 1, name: 'Fresh Tomatoes', farmer: 'Ramesh Singh', location: 'Nashik, MH', price: 20, stock: '50kg', image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?ixlib=rb-4.0.3&w=500&q=60', status: 'In Stock' },
   { id: 2, name: 'Organic Potatoes', farmer: 'Suresh Kumar', location: 'Agra, UP', price: 15, stock: '100kg', image: 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?ixlib=rb-4.0.3&w=500&q=60', status: 'In Stock' },
+  { id: 3, name: 'Red Onions', farmer: 'Vikram Yadav', location: 'Pune, MH', price: 30, stock: '200kg', image: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?ixlib=rb-4.0.3&w=500&q=60', status: 'In Stock' },
+  { id: 4, name: 'Premium Wheat', farmer: 'Harish Patel', location: 'Bhopal, MP', price: 25, stock: '500kg', image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?ixlib=rb-4.0.3&w=500&q=60', status: 'In Stock' },
+  { id: 5, name: 'Fresh Green Peas', farmer: 'Mohan Das', location: 'Indore, MP', price: 40, stock: '30kg', image: 'https://images.unsplash.com/photo-1550828553-b0972e2760f3?ixlib=rb-4.0.3&w=500&q=60', status: 'In Stock' },
+  { id: 6, name: 'Alphonso Mangoes', farmer: 'Ratnagiri Farms', location: 'Ratnagiri, MH', price: 350, stock: '20kg', image: 'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?ixlib=rb-4.0.3&w=500&q=60', status: 'In Stock' },
+  { id: 7, name: 'Organic Spinach', farmer: 'Priya Sharma', location: 'Lucknow, UP', price: 10, stock: '15kg', image: 'https://images.unsplash.com/photo-1576045057995-568f588f82fb?ixlib=rb-4.0.3&w=500&q=60', status: 'In Stock' },
+  { id: 8, name: 'Kashmiri Apples', farmer: 'Tariq Bhatt', location: 'Srinagar, JK', price: 120, stock: '40kg', image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6fac6?ixlib=rb-4.0.3&w=500&q=60', status: 'In Stock' },
 ];
 
 let orders = [
@@ -54,7 +61,7 @@ app.post('/api/products', (req, res) => {
     location: 'Local Farm',
     price: Number(req.body.price),
     stock: req.body.qty,
-    image: 'https://images.unsplash.com/photo-1595856417537-8848d56b063d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
+    image: req.body.image || 'https://images.unsplash.com/photo-1595856417537-8848d56b063d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60',
     status: 'In Stock'
   };
   products.push(newProduct);
@@ -172,7 +179,34 @@ app.get('/api/mandi-prices', async (req, res) => {
       m.market.toLowerCase().includes(lowerCity) || 
       m.state.toLowerCase().includes(lowerCity)
     );
-    if (citySpecific.length > 0) filteredMock = citySpecific;
+    
+    if (citySpecific.length > 0) {
+      filteredMock = citySpecific;
+    } else {
+      // Dynamic mock generation for cities not in our hardcoded list
+      // This makes the demo look flawless for any location selected on the map
+      const commodities = ["Tomato", "Onion", "Potato", "Wheat", "Rice", "Chana", "Mustard"];
+      const generated = [];
+      const numToGenerate = 3 + Math.floor(Math.random() * 3); // Generate 3 to 5 items
+      
+      // Shuffle and pick
+      const shuffled = commodities.sort(() => 0.5 - Math.random());
+      const selected = shuffled.slice(0, numToGenerate);
+      
+      selected.forEach(c => {
+        const basePrice = 1000 + Math.floor(Math.random() * 4000);
+        generated.push({
+          commodity: c,
+          min_price: (basePrice - 200).toString(),
+          max_price: (basePrice + 300).toString(),
+          modal_price: basePrice.toString(),
+          market: city.split(',')[0], // Use just the city name part
+          state: "Local State",
+          trend: Math.random() > 0.5 ? "up" : "down"
+        });
+      });
+      filteredMock = generated;
+    }
   }
 
   res.json({ source: 'mock', records: filteredMock });
@@ -212,6 +246,36 @@ app.post('/api/feedback', (req, res) => {
   };
   feedback.push(newFeedback);
   res.status(201).json(newFeedback);
+});
+
+// Chatbot AI Endpoint (Simulated)
+app.post('/api/chat', (req, res) => {
+  const { message } = req.body;
+  if (!message) return res.status(400).json({ error: 'Message is required' });
+
+  const msg = message.toLowerCase();
+  let reply = "I'm your Krishi Cart AI Assistant! I can help you find fresh produce, suggest crops, or guide you through the website. What do you need help with?";
+
+  if (msg.includes('buy') || msg.includes('purchase') || msg.includes('shop')) {
+    reply = "You can browse our fresh, live products on the Consumer Marketplace page. Just click on 'Marketplace' in the navigation bar to see what our farmers have listed today!";
+  } else if (msg.includes('tomato') || msg.includes('potato') || msg.includes('wheat') || msg.includes('onion')) {
+    reply = "We have plenty of fresh produce coming directly from the farms! You can find tomatoes, potatoes, onions, and more in our Marketplace. They are organic and 100% traceable.";
+  } else if (msg.includes('price') || msg.includes('mandi') || msg.includes('rate')) {
+    reply = "We provide live daily Mandi prices directly from the Government database! You can see the live ticker on the Consumer Marketplace page to make better purchasing decisions.";
+  } else if (msg.includes('suggest') || msg.includes('crop') || msg.includes('grow')) {
+    reply = "If you are a farmer looking for suggestions: Based on current market trends, Tomatoes and Onions are seeing a price surge. However, please ensure your local soil and climate conditions are suitable before planting.";
+  } else if (msg.includes('sell') || msg.includes('farmer')) {
+    reply = "Are you a farmer? Welcome! You can list your products, track your inventory, and see market trends from the Farmer Dashboard. Let's grow together!";
+  } else if (msg.includes('hello') || msg.includes('hi ') || msg.includes('hey')) {
+    reply = "Hello there! Welcome to Krishi Cart. How can I assist you with your farming or shopping needs today?";
+  } else if (msg.includes('support') || msg.includes('help') || msg.includes('issue')) {
+    reply = "I'm here to help! If you have a specific issue with an order, you can contact our support team at support@krishicart.com or call our toll-free number at 1800-123-4567.";
+  }
+
+  // Add a slight delay to simulate AI thinking
+  setTimeout(() => {
+    res.json({ reply });
+  }, 800);
 });
 
 // Start Server

@@ -1,8 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Package, IndianRupee, TrendingUp, TrendingDown, CheckCircle, Clock, Sparkles, Mic } from 'lucide-react';
+import { PlusCircle, Package, IndianRupee, TrendingUp, TrendingDown, CheckCircle, Clock, Sparkles, Mic, MapPin, Banknote, CreditCard, X } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from '../context/LocationContext';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix for leaflet marker icon
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// Helper to simulate coordinates from city name
+const getCoordinates = (locationName) => {
+  if (!locationName) return [26.8467, 80.9462]; // Default Lucknow
+  if (locationName.includes('Nashik')) return [19.9975, 73.7898];
+  if (locationName.includes('Agra')) return [27.1767, 78.0081];
+  if (locationName.includes('Kanpur')) return [26.4499, 80.3319];
+  if (locationName.includes('Varanasi')) return [25.3176, 82.9739];
+  // Randomize slightly around central India if unknown
+  return [22.0 + (Math.random() * 2 - 1), 79.0 + (Math.random() * 2 - 1)];
+};
 
 const FarmerDashboard = () => {
   const { t } = useTranslation();
@@ -10,9 +32,10 @@ const FarmerDashboard = () => {
   const [inventory, setInventory] = useState([]);
   const [orders, setOrders] = useState([]);
   const [mandiPrices, setMandiPrices] = useState([]);
-  const [newItem, setNewItem] = useState({ name: '', qty: '', price: '' });
+  const [newItem, setNewItem] = useState({ name: '', qty: '', price: '', image: '' });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [suggestedPrice, setSuggestedPrice] = useState(null);
+  const [selectedOrderMap, setSelectedOrderMap] = useState(null);
 
   const [isListening, setIsListening] = useState(false);
 
@@ -92,8 +115,9 @@ const FarmerDashboard = () => {
         body: JSON.stringify(newItem)
       });
       if (res.ok) {
-        setNewItem({ name: '', qty: '', price: '' });
+        setNewItem({ name: '', qty: '', price: '', image: '' });
         setSuggestedPrice(null);
+        document.getElementById('image-upload').value = '';
         fetchProducts(); // Refresh list
       }
     } catch (error) {
@@ -151,7 +175,7 @@ const FarmerDashboard = () => {
       name = name.replace(/for|rupees|rs|per kg/gi, '').trim();
       name = name.charAt(0).toUpperCase() + name.slice(1);
       
-      setNewItem({ name: name || transcript, qty: qty, price: price });
+      setNewItem({ ...newItem, name: name || transcript, qty: qty, price: price });
       setIsListening(false);
     };
     
@@ -278,6 +302,31 @@ const FarmerDashboard = () => {
                 </div>
               )}
 
+              <div className="md:col-span-3">
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">Product Image (Optional)</label>
+                <div className="flex items-center gap-4">
+                  <input
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setNewItem({...newItem, image: reader.result});
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                  />
+                  {newItem.image && (
+                    <img src={newItem.image} alt="Preview" className="w-12 h-12 rounded-lg object-cover border border-slate-200 shadow-sm shrink-0" />
+                  )}
+                </div>
+              </div>
+
               <div className="md:col-span-3 mt-4">
                 <button type="submit" className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3.5 rounded-xl transition-all shadow-md shadow-primary/20">
                   {t('farmer.publish')}
@@ -298,6 +347,7 @@ const FarmerDashboard = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
+                    <th className="px-6 py-4 font-bold">Image</th>
                     <th className="px-6 py-4 font-bold">{t('farmer.colProduce')}</th>
                     <th className="px-6 py-4 font-bold">{t('farmer.colQty')}</th>
                     <th className="px-6 py-4 font-bold">{t('farmer.colPrice')}</th>
@@ -307,9 +357,12 @@ const FarmerDashboard = () => {
                 <tbody className="divide-y divide-slate-100">
                   {inventory.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50 transition-colors group">
+                      <td className="px-6 py-4">
+                        <img src={item.image || 'https://images.unsplash.com/photo-1595856417537-8848d56b063d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=60'} alt={item.name} className="w-12 h-12 rounded-lg object-cover border border-slate-200 shadow-sm" />
+                      </td>
                       <td className="px-6 py-4 font-bold text-slate-800 group-hover:text-primary transition-colors">{item.name}</td>
                       <td className="px-6 py-4 text-slate-600 font-medium">{item.stock || item.qty}</td>
-                      <td className="px-6 py-4 text-slate-700 font-bold flex items-center gap-0.5"><IndianRupee className="w-3.5 h-3.5 text-slate-400"/>{item.price}</td>
+                      <td className="px-6 py-4 text-slate-700 font-bold flex items-center gap-0.5 mt-2"><IndianRupee className="w-3.5 h-3.5 text-slate-400"/>{item.price}</td>
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
                           <CheckCircle className="w-3 h-3" /> {item.status}
@@ -341,18 +394,35 @@ const FarmerDashboard = () => {
                 <div key={order.id} className="p-5 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-mono text-sm font-bold text-slate-500 group-hover:text-slate-700 transition-colors">{order.id}</span>
-                    <span className="text-sm font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded border border-primary/20">{order.amount}</span>
+                    <span className="text-sm font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded border border-primary/20">₹{order.amount}</span>
                   </div>
-                  <p className="font-bold text-slate-800 mb-1">{order.item}</p>
-                  <p className="text-sm text-slate-500 mb-4 flex items-center gap-2 font-medium">
-                     <span className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] text-slate-700 font-bold">{order.buyer.charAt(0)}</span>
-                     {t('farmer.buyer')} <span className="text-slate-700">{order.buyer}</span>
-                  </p>
-                  <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
+                  <p className="font-bold text-slate-800 mb-3">{order.item}</p>
+                  
+                  <div className="bg-slate-50 rounded-lg p-3 space-y-2 mb-4 border border-slate-100">
+                    <p className="text-sm text-slate-600 flex items-center gap-2 font-medium">
+                       <span className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[9px] text-slate-700 font-bold">{order.buyer.charAt(0)}</span>
+                       {t('farmer.buyer')} <span className="text-slate-900 font-bold">{order.buyer}</span>
+                    </p>
+                    <p className="text-xs text-slate-500 flex items-center gap-2">
+                       <MapPin className="w-4 h-4 text-slate-400" />
+                       <span className="truncate">{order.location || 'Location pending...'}</span>
+                    </p>
+                    <p className="text-xs text-slate-500 flex items-center gap-2">
+                       {order.paymentMethod === 'cod' ? <Banknote className="w-4 h-4 text-emerald-600" /> : <CreditCard className="w-4 h-4 text-blue-500" />}
+                       <span className="font-bold uppercase tracking-wider">{order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'UPI/Online'}</span>
+                    </p>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                     <button 
+                       onClick={() => setSelectedOrderMap(order)}
+                       className="text-xs bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
+                     >
+                       <MapPin className="w-3.5 h-3.5 text-primary" /> View Map
+                     </button>
                      <span className="text-xs font-bold text-yellow-700 bg-yellow-50 border border-yellow-200 px-2.5 py-1 rounded-md">
                        {order.status}
                      </span>
-                     <button className="text-sm text-primary font-bold hover:text-primary-dark transition-colors flex items-center gap-1">{t('farmer.update')} <span className="text-lg leading-none">›</span></button>
                   </div>
                 </div>
               ))}
@@ -367,8 +437,63 @@ const FarmerDashboard = () => {
         </div>
 
       </div>
+
+      {/* Customer Location Map Modal */}
+      {selectedOrderMap && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col h-[70vh]">
+             <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">Customer Location</h3>
+                  <p className="text-xs text-slate-500">Order: {selectedOrderMap.id} • Buyer: {selectedOrderMap.buyer}</p>
+                </div>
+                <button onClick={() => setSelectedOrderMap(null)} className="text-slate-400 hover:text-slate-600 bg-white border border-slate-200 rounded-full p-1.5"><X className="w-5 h-5" /></button>
+             </div>
+             
+             <div className="flex-1 bg-slate-100 relative">
+               <MapContainer center={getCoordinates(selectedOrderMap.location)} zoom={13} style={{ height: '100%', width: '100%' }}>
+                  <TileLayer
+                    attribution='&copy; OpenStreetMap'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <Marker position={getCoordinates(selectedOrderMap.location)}>
+                    <Popup>
+                      <div className="text-center font-sans">
+                        <p className="font-bold text-slate-800">{selectedOrderMap.buyer}'s Location</p>
+                        <p className="text-xs text-slate-500">{selectedOrderMap.location}</p>
+                        <p className="text-xs font-bold text-emerald-600 mt-1 uppercase tracking-wider">{selectedOrderMap.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Paid'}</p>
+                      </div>
+                    </Popup>
+                  </Marker>
+               </MapContainer>
+             </div>
+
+             <div className="p-5 bg-white border-t border-slate-100 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                   <div className="bg-primary/10 text-primary p-2 rounded-xl">
+                      <Truck className="w-5 h-5" />
+                   </div>
+                   <div>
+                      <p className="font-bold text-slate-800 text-sm">Ready for Dispatch</p>
+                      <p className="text-xs text-slate-500">Deliver to {selectedOrderMap.location || 'customer address'}</p>
+                   </div>
+                </div>
+                <button 
+                  onClick={() => setSelectedOrderMap(null)}
+                  className="bg-slate-900 text-white font-bold py-2.5 px-6 rounded-xl hover:bg-slate-800 transition-all"
+                >
+                  Close Map
+                </button>
+             </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
+
+// Add Truck icon for the modal since it wasn't imported originally
+import { Truck } from 'lucide-react';
 
 export default FarmerDashboard;

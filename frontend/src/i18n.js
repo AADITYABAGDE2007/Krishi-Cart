@@ -9,7 +9,9 @@ const en = {
       farmerDashboard: "Farmer Dashboard",
       cart: "Cart",
       logout: "Logout",
-      appTitle: "Krishi Cart"
+      appTitle: "Krishi Cart",
+      loginAction: "Login",
+      signupAction: "Sign Up"
     },
     login: {
       livePlatform: "Live Platform",
@@ -118,7 +120,9 @@ const hi = {
       farmerDashboard: "किसान डैशबोर्ड",
       cart: "कार्ट",
       logout: "लॉग आउट",
-      appTitle: "कृषि कार्ट"
+      appTitle: "कृषि कार्ट",
+      loginAction: "लॉग इन",
+      signupAction: "साइन अप"
     },
     login: {
       livePlatform: "लाइव प्लेटफ़ॉर्म",
