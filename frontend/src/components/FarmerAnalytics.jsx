@@ -7,6 +7,12 @@ export const FarmerAnalytics = () => {
   const [sellingPrice, setSellingPrice] = useState('');
   const [profit, setProfit] = useState(null);
   const [loanEligibility, setLoanEligibility] = useState(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessage, setChatMessage] = useState('');
+  const [chatHistory, setChatHistory] = useState([
+    { sender: 'Ramesh (Pune)', text: 'Aaj onion ka rate kya chal raha hai?', time: '10:30 AM' },
+    { sender: 'Suresh (Nashik)', text: 'Bhai ₹1800/quintal mila mujhe subah.', time: '10:32 AM' }
+  ]);
 
   const calculateProfit = () => {
     const c = parseFloat(cost);
@@ -132,13 +138,72 @@ export const FarmerAnalytics = () => {
             <div>
               <h3 className="text-lg font-black text-slate-900 mb-1">Farmer Community Chat</h3>
               <p className="text-sm text-slate-600 font-medium mb-3">Connect with 500+ local farmers for advice and mandi updates.</p>
-              <button className="text-sm font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 px-4 py-2 rounded-xl transition-colors">
+              <button 
+                onClick={() => setIsChatOpen(true)}
+                className="text-sm font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 px-4 py-2 rounded-xl transition-colors"
+              >
                 Join Discussion
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Community Chat Modal */}
+      {isChatOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col h-[600px]">
+             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-amber-50">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-amber-100 rounded-full flex items-center justify-center">
+                    <MessageCircle className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-slate-900">Kisan Live Chat</h3>
+                    <p className="text-xs text-amber-700 font-bold">504 Farmers Online</p>
+                  </div>
+                </div>
+                <button onClick={() => setIsChatOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white border border-slate-200 rounded-full p-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+             </div>
+             
+             <div className="flex-1 p-4 bg-slate-50 overflow-y-auto space-y-4">
+               {chatHistory.map((msg, idx) => (
+                 <div key={idx} className={`flex flex-col ${msg.sender === 'You' ? 'items-end' : 'items-start'}`}>
+                   <span className="text-[10px] text-slate-500 font-bold mb-1 ml-1">{msg.sender} • {msg.time}</span>
+                   <div className={`px-4 py-2.5 rounded-2xl max-w-[85%] text-sm font-medium shadow-sm ${msg.sender === 'You' ? 'bg-amber-500 text-white rounded-br-none' : 'bg-white text-slate-800 border border-slate-200 rounded-bl-none'}`}>
+                     {msg.text}
+                   </div>
+                 </div>
+               ))}
+             </div>
+
+             <div className="p-4 bg-white border-t border-slate-100">
+               <form 
+                 onSubmit={(e) => {
+                   e.preventDefault();
+                   if (!chatMessage.trim()) return;
+                   setChatHistory([...chatHistory, { sender: 'You', text: chatMessage, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
+                   setChatMessage('');
+                 }}
+                 className="flex gap-2"
+               >
+                 <input 
+                   type="text" 
+                   value={chatMessage}
+                   onChange={(e) => setChatMessage(e.target.value)}
+                   placeholder="Type a message to the community..."
+                   className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+                 />
+                 <button type="submit" className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-6 rounded-xl transition-colors">
+                   Send
+                 </button>
+               </form>
+             </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
