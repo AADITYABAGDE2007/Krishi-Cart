@@ -397,10 +397,10 @@ const FarmerDashboard = () => {
                   onClick={startVoiceInput}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${isListening ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' : 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20'}`}
                 >
-                  <Mic className="w-4 h-4" /> {isListening ? 'Listening...' : 'Voice Input'}
+                  <Mic className="w-4 h-4" /> {isListening ? t('farmer.listening') : t('farmer.voiceInput')}
                 </button>
                 <label className="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold border transition-colors bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100">
-                  <UploadCloud className="w-4 h-4" /> Bulk CSV
+                  <UploadCloud className="w-4 h-4" /> {t('farmer.bulkCsv')}
                   <input type="file" accept=".csv" className="hidden" onChange={handleBulkUpload} />
                 </label>
               </div>
@@ -507,7 +507,7 @@ const FarmerDashboard = () => {
               <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-4 shadow-sm animate-in fade-in duration-300">
                 <div className="flex items-center gap-2 mb-3 text-red-700 font-bold">
                   <AlertTriangle className="w-5 h-5" />
-                  <span>Inventory Alerts - Low Stock Items</span>
+                  <span>{t('farmer.lowStockAlert')}</span>
                 </div>
                 <div className="space-y-2">
                   {lowStockItems.map(item => (
@@ -516,14 +516,14 @@ const FarmerDashboard = () => {
                         <img src={item.image || 'https://images.unsplash.com/photo-1595856417537-8848d56b063d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=60'} alt={item.name} className="w-10 h-10 rounded-lg object-cover" />
                         <div>
                           <p className="font-bold text-slate-800 text-sm">{item.name}</p>
-                          <p className="text-xs text-red-600 font-medium">Only {item.stock || item.qty} left in stock. Please replenish soon.</p>
+                          <p className="text-xs text-red-600 font-medium">{t('farmer.onlyLeft').replace('left', item.stock || item.qty)}</p>
                         </div>
                       </div>
                       <button 
                         onClick={() => handleUpdateStock(item.id, item.stock || item.qty)}
                         className="text-xs bg-red-100 hover:bg-red-200 text-red-700 font-bold px-3 py-1.5 rounded-lg transition-colors"
                       >
-                        Update Stock
+                        {t('farmer.updateStock')}
                       </button>
                     </div>
                   ))}
@@ -576,14 +576,14 @@ const FarmerDashboard = () => {
                           <button 
                             onClick={() => setEditingProduct({...item, stock: item.stock || item.qty})}
                             className="p-1.5 bg-slate-100 hover:bg-primary hover:text-white rounded-lg text-slate-600 transition-colors"
-                            title="Edit Product"
+                            title={t('farmer.editProduct')}
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button 
                             onClick={() => handleDeleteProduct(item.id)}
                             className="p-1.5 bg-red-50 hover:bg-red-600 hover:text-white rounded-lg text-red-500 transition-colors"
-                            title="Delete Product"
+                            title={t('farmer.deleteProduct')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -602,22 +602,22 @@ const FarmerDashboard = () => {
               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
               <div className="relative z-10 max-w-xl mb-6 md:mb-0">
                 <h3 className="text-3xl font-black mb-2 flex items-center gap-3">
-                  <Zap className="w-8 h-8 text-yellow-300" /> Start Smart Selling
+                  <Zap className="w-8 h-8 text-yellow-300" /> {t('farmer.startSmartSelling')}
                 </h3>
-                <p className="text-white/80 font-medium">Clear out your inventory faster with AI-driven dynamic pricing and direct matching with active buyers.</p>
+                <p className="text-white/80 font-medium">{t('farmer.smartSellDesc')}</p>
               </div>
               <button 
                 onClick={() => setShowSmartSell(true)}
                 className="relative z-10 bg-white text-primary hover:bg-slate-50 px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg whitespace-nowrap"
               >
-                Open Smart Sell
+                {t('farmer.openSmartSell')}
               </button>
             </div>
           ) : (
             <div className="relative mt-8">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-                  <Zap className="w-6 h-6 text-primary" /> Active Smart Selling
+                  <Zap className="w-6 h-6 text-primary" /> {t('farmer.activeSmartSelling')}
                 </h3>
                 <button 
                   onClick={() => setShowSmartSell(false)}
@@ -797,14 +797,14 @@ const FarmerDashboard = () => {
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
              <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                 <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                  <Edit2 className="w-5 h-5 text-primary" /> Edit Product
+                  <Edit2 className="w-5 h-5 text-primary" /> {t('farmer.editProduct')}
                 </h3>
                 <button onClick={() => setEditingProduct(null)} className="text-slate-400 hover:text-slate-600 bg-white border border-slate-200 rounded-full p-1.5"><X className="w-5 h-5" /></button>
              </div>
              
              <form onSubmit={submitEditProduct} className="p-6 space-y-4">
                <div>
-                 <label className="block text-sm font-bold text-slate-700 mb-1.5">Product Name</label>
+                 <label className="block text-sm font-bold text-slate-700 mb-1.5">{t('farmer.productName')}</label>
                  <input
                    type="text"
                    value={editingProduct.name}
@@ -814,7 +814,7 @@ const FarmerDashboard = () => {
                  />
                </div>
                <div>
-                 <label className="block text-sm font-bold text-slate-700 mb-1.5">Available Stock</label>
+                 <label className="block text-sm font-bold text-slate-700 mb-1.5">{t('farmer.availableStock')}</label>
                  <input
                    type="text"
                    value={editingProduct.stock || editingProduct.qty || ''}
@@ -824,7 +824,7 @@ const FarmerDashboard = () => {
                  />
                </div>
                <div>
-                 <label className="block text-sm font-bold text-slate-700 mb-1.5">Price (₹)</label>
+                 <label className="block text-sm font-bold text-slate-700 mb-1.5">{t('farmer.price')} (₹)</label>
                  <input
                    type="number"
                    value={editingProduct.price}
@@ -840,13 +840,13 @@ const FarmerDashboard = () => {
                    onClick={() => setEditingProduct(null)}
                    className="flex-1 bg-white border border-slate-200 text-slate-700 font-bold py-3 rounded-xl hover:bg-slate-50 transition-all"
                  >
-                   Cancel
+                   {t('farmer.cancel')}
                  </button>
                  <button 
                    type="submit" 
                    className="flex-1 bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary-dark transition-all flex items-center justify-center gap-2"
                  >
-                   <Save className="w-4 h-4" /> Save Changes
+                   <Save className="w-4 h-4" /> {t('farmer.saveChanges')}
                  </button>
                </div>
              </form>

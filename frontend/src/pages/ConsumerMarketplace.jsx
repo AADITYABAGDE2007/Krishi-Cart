@@ -113,7 +113,7 @@ const ConsumerMarketplace = () => {
           <div className="mb-12 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row items-stretch relative">
             <div className="bg-gradient-to-r from-emerald-600 to-emerald-800 px-6 py-4 flex flex-col items-center justify-center gap-1 text-white font-bold whitespace-nowrap shadow-[4px_0_15px_rgba(0,0,0,0.5)] z-10 md:w-auto w-full border-b md:border-b-0 md:border-r border-emerald-500/30">
               <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-yellow-300" /> <span className="tracking-wide">LIVE RATES</span>
+                <TrendingUp className="w-5 h-5 text-yellow-300" /> <span className="tracking-wide">{t('marketplace.liveRates')}</span>
               </div>
               <span className="text-[10px] uppercase tracking-widest text-emerald-200">Source: {dataSource}</span>
             </div>
@@ -183,28 +183,28 @@ const ConsumerMarketplace = () => {
               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
               <div className="relative z-10 max-w-xl mb-6 md:mb-0">
                 <h3 className="text-3xl font-black mb-2 flex items-center gap-3">
-                  <Zap className="w-8 h-8 text-yellow-300" /> Unlock Smart Bulk Deals
+                  <Zap className="w-8 h-8 text-yellow-300" /> {t('marketplace.unlockSmartDeals')}
                 </h3>
-                <p className="text-emerald-100 font-medium">Buy produce directly from verified farmers in bulk and get exclusive dynamic discounts. Perfect for restaurants, retailers, and large families.</p>
+                <p className="text-emerald-100 font-medium">{t('marketplace.smartBuyDesc')}</p>
               </div>
               <button 
                 onClick={() => setShowSmartBuy(true)}
                 className="relative z-10 bg-white text-emerald-800 hover:bg-emerald-50 px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg whitespace-nowrap"
               >
-                Explore Smart Buy
+                {t('marketplace.exploreSmartBuy')}
               </button>
             </div>
           ) : (
             <div className="relative">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-                  <Zap className="w-6 h-6 text-emerald-600" /> Active Smart Deals
+                  <Zap className="w-6 h-6 text-emerald-600" /> {t('marketplace.activeSmartDeals')}
                 </h3>
                 <button 
                   onClick={() => setShowSmartBuy(false)}
                   className="text-slate-500 hover:text-slate-700 font-bold text-sm flex items-center gap-1"
                 >
-                  <X className="w-4 h-4" /> Close Deals
+                  <X className="w-4 h-4" /> {t('marketplace.closeDeals')}
                 </button>
               </div>
               <SmartSell mode="buy" />
@@ -360,7 +360,7 @@ const ConsumerMarketplace = () => {
             <div className="pt-16 pb-10 px-8 text-center">
               <h3 className="text-2xl font-black text-slate-900 mb-2">{selectedTraceProduct.name}</h3>
               <p className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 font-bold text-xs px-3 py-1 rounded-full mb-8">
-                <CheckCircle className="w-3.5 h-3.5" /> 100% Traceable Source
+                <CheckCircle className="w-3.5 h-3.5" /> {t('marketplace.traceableSource')}
               </p>
               
               <div className="space-y-4 text-left">
@@ -369,7 +369,7 @@ const ConsumerMarketplace = () => {
                       <MapPin className="w-5 h-5" />
                    </div>
                    <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Origin</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('marketplace.origin')}</p>
                       <p className="font-bold text-slate-900">{selectedTraceProduct.location}</p>
                    </div>
                 </div>
@@ -378,7 +378,7 @@ const ConsumerMarketplace = () => {
                       <User className="w-5 h-5" />
                    </div>
                    <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Farmer</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('marketplace.farmerBio')}</p>
                       <p className="font-bold text-slate-900">{selectedTraceProduct.farmer}</p>
                    </div>
                 </div>
@@ -388,7 +388,7 @@ const ConsumerMarketplace = () => {
                 onClick={() => setSelectedTraceProduct(null)}
                 className="w-full mt-8 bg-slate-900 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-slate-800 transition-all"
               >
-                Close
+                {t('marketplace.close')}
               </button>
             </div>
           </div>
@@ -400,13 +400,13 @@ const ConsumerMarketplace = () => {
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
              <div className="p-8">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-black text-slate-900">Rate {ratingFarmer.farmer}</h3>
+                  <h3 className="text-xl font-black text-slate-900">{t('marketplace.rate')} {ratingFarmer.farmer}</h3>
                   <button onClick={() => setRatingFarmer(null)} className="text-slate-400 hover:text-slate-600"><X className="w-6 h-6" /></button>
                 </div>
 
                 <form onSubmit={handleRateFarmer} className="space-y-6">
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-3">Rating</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-3">{t('marketplace.rating')}</label>
                     <div className="flex gap-2">
                       {[1, 2, 3, 4, 5].map((num) => (
                         <button
@@ -422,12 +422,12 @@ const ConsumerMarketplace = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Comment</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">{t('marketplace.comment')}</label>
                     <textarea
                       value={farmerComment}
                       onChange={(e) => setFarmerComment(e.target.value)}
                       className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none h-24 resize-none"
-                      placeholder="Share your experience with this farmer..."
+                      placeholder="..."
                       required
                     ></textarea>
                   </div>
@@ -437,7 +437,7 @@ const ConsumerMarketplace = () => {
                     disabled={isSubmittingRating}
                     className="w-full bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-emerald-800 transition-all disabled:opacity-50"
                   >
-                    {isSubmittingRating ? 'Submitting...' : 'Submit Rating'}
+                    {isSubmittingRating ? t('marketplace.submitting') : t('marketplace.submitRating')}
                   </button>
                 </form>
              </div>
