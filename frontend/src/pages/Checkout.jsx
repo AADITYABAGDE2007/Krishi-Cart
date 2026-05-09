@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Truck, CreditCard, ShieldCheck, MapPin } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Truck, CreditCard, ShieldCheck, MapPin, AlertCircle, TrendingDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useLocation as useGlobalLocation } from '../context/LocationContext';
@@ -14,24 +14,46 @@ const Checkout = () => {
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('upi');
+  const [quantity, setQuantity] = useState(1);
+  const [orderError, setOrderError] = useState('');
 
   const returnRoute = user?.role === 'Farmer' ? '/farmer' : '/consumer';
 
   const product = location.state?.product || { 
+    id: 1,
     name: 'Fresh Tomatoes', 
-    stock: '10kg', 
+    stock: '50kg', 
     price: 200, 
     farmer: 'Ramesh Singh',
+    lat: 19.9975,
+    lng: 73.7898,
     image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?ixlib=rb-4.0.3&w=100&q=60'
   };
 
+  const basePrice = product.price * quantity;
+  const isBulk = quantity >= 50;
+  const discount = isBulk ? basePrice * 0.1 : 0; // 10% discount for bulk
+  const subtotal = basePrice - discount;
+  const deliveryFee = 40;
+  const platformFee = 10;
+  const total = subtotal + deliveryFee + platformFee;
+
   const handlePayment = async () => {
     setIsProcessing(true);
+    setOrderError('');
     
+    // Simulate customer location slightly offset from farmer for a realistic distance
+    // In a real app, this would come from the user's GPS/browser
+    const buyerLat = (product.lat || 20.0) + (Math.random() * 0.4 - 0.2); 
+    const buyerLng = (product.lng || 73.0) + (Math.random() * 0.4 - 0.2);
+
     const orderData = {
-      item: `${product.name} (${product.stock || '1 qty'})`,
+      productId: product.id,
+      quantity: quantity,
       buyer: user?.name || 'Current Consumer',
-      amount: product.price + 50,
+      buyerLat,
+      buyerLng,
+      amount: total,
       location: selectedLocation,
       paymentMethod: paymentMethod
     };
@@ -43,12 +65,16 @@ const Checkout = () => {
         body: JSON.stringify(orderData)
       });
       
+      const data = await res.json();
+      
       if (res.ok) {
         setStep(3);
+      } else {
+        setOrderError(data.error || 'Failed to place order.');
       }
     } catch (error) {
       console.error('Error placing order:', error);
-      alert('Failed to place order. Please try again.');
+      setOrderError('Network error. Failed to place order. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -103,6 +129,16 @@ const Checkout = () => {
           <ArrowLeft className="w-4 h-4" /> {t('checkout.back')}
         </Link>
 
+        {orderError && (
+          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-red-900">Order Error</p>
+              <p className="text-red-700 text-sm">{orderError}</p>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col md:flex-row gap-8">
           
           {/* Left Side - Main Content */}
@@ -114,18 +150,44 @@ const Checkout = () => {
               </h2>
               
               {step === 1 ? (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-5 border border-slate-200 rounded-2xl bg-slate-50 shadow-sm">
+                <div className="space-y-6">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-5 border border-slate-200 rounded-2xl bg-slate-50 shadow-sm gap-4">
                     <div className="flex items-center gap-5">
-                      <div className="w-20 h-20 bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                      <div className="w-24 h-24 bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0">
                         <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
                       </div>
                       <div>
                         <h3 className="font-extrabold text-lg text-slate-900 mb-1">{product.name}</h3>
-                        <p className="text-sm text-slate-500 font-medium">{t('checkout.qty')} {product.stock || '1'} • {t('checkout.from')} <span className="text-slate-700 font-bold">{product.farmer}</span></p>
+                        <p className="text-sm text-slate-500 font-medium mb-2">{t('checkout.from')} <span className="text-slate-700 font-bold">{product.farmer}</span></p>
+                        <div className="font-black text-xl text-emerald-700">₹{product.price}<span className="text-sm text-slate-500">/kg</span></div>
                       </div>
                     </div>
-                    <div className="font-black text-xl text-slate-800 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">₹{product.price}</div>
+                    
+                    <div className="flex flex-col gap-2 w-full md:w-auto">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Quantity (kg)</label>
+                      <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+                         <button 
+                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 font-bold transition-colors"
+                         >-</button>
+                         <input 
+                           type="number" 
+                           min="1" 
+                           value={quantity}
+                           onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                           className="w-16 text-center font-bold text-slate-900 bg-transparent outline-none"
+                         />
+                         <button 
+                            onClick={() => setQuantity(quantity + 1)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold transition-colors"
+                         >+</button>
+                      </div>
+                      {quantity >= 50 && (
+                         <div className="text-xs font-bold text-green-600 flex items-center gap-1 animate-in fade-in">
+                            <TrendingDown className="w-3 h-3" /> 10% Bulk Discount Applied!
+                         </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -177,21 +239,27 @@ const Checkout = () => {
               
               <div className="space-y-4 text-sm mb-8">
                 <div className="flex justify-between text-slate-500 font-medium">
-                  <span>{t('checkout.subtotal')}</span>
-                  <span className="font-bold text-slate-700">₹{product.price}</span>
+                  <span>{t('checkout.subtotal')} ({quantity}kg)</span>
+                  <span className="font-bold text-slate-700">₹{basePrice}</span>
                 </div>
+                {isBulk && (
+                   <div className="flex justify-between text-green-600 font-bold bg-green-50 p-2 rounded-lg">
+                     <span>Bulk Discount (10%)</span>
+                     <span>-₹{discount}</span>
+                   </div>
+                )}
                 <div className="flex justify-between text-slate-500 font-medium">
                   <span>{t('checkout.delivery')} <span className="text-xs ml-1 bg-yellow-100 text-yellow-800 font-bold px-1.5 py-0.5 rounded border border-yellow-200">Direct</span></span>
-                  <span className="font-bold text-slate-700">₹40</span>
+                  <span className="font-bold text-slate-700">₹{deliveryFee}</span>
                 </div>
                 <div className="flex justify-between text-slate-500 font-medium">
                   <span>{t('checkout.platform')}</span>
-                  <span className="font-bold text-slate-700">₹10</span>
+                  <span className="font-bold text-slate-700">₹{platformFee}</span>
                 </div>
                 
                 <div className="border-t border-slate-200 pt-5 mt-2 flex justify-between items-center">
                   <span className="font-extrabold text-slate-800">{t('checkout.total')}</span>
-                  <span className="font-black text-3xl text-slate-900">₹{product.price + 50}</span>
+                  <span className="font-black text-3xl text-emerald-700">₹{total}</span>
                 </div>
               </div>
               
@@ -214,7 +282,7 @@ const Checkout = () => {
                       {t('checkout.processing')}
                     </span>
                   ) : (
-                    `${t('checkout.paySecurely')} ₹${product.price + 50}`
+                    `${t('checkout.paySecurely')} ₹${total}`
                   )}
                 </button>
               )}

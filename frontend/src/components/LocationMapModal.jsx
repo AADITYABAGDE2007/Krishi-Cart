@@ -176,13 +176,15 @@ const LocationMapModal = ({ isOpen, onClose }) => {
           {isOpen && (
             <MapContainer 
               center={position} 
-              zoom={13} 
+              zoom={14} 
               style={{ height: '400px', width: '100%', zIndex: 0 }}
-              zoomControl={false}
+              scrollWheelZoom={true}
+              zoomControl={true}
             >
               <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                attribution='&copy; Google Maps'
+                url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                maxZoom={20}
               />
               <Marker position={position} />
               <MapClickHandler setPosition={setPosition} />

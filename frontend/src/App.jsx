@@ -5,6 +5,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import FarmerDashboard from './pages/FarmerDashboard';
 import ConsumerMarketplace from './pages/ConsumerMarketplace';
 import Checkout from './pages/Checkout';
+import DeliveryDashboard from './pages/DeliveryDashboard';
 import Navbar from './components/Navbar';
 import FeedbackModal from './components/FeedbackModal';
 import Profile from './pages/Profile';
@@ -17,6 +18,8 @@ const RootRedirect = () => {
   const { user, isLoggedIn } = useAuth();
   if (isLoggedIn && user?.role?.toLowerCase() === 'farmer') {
     return <Navigate to="/farmer" replace />;
+  } else if (isLoggedIn && user?.role?.toLowerCase() === 'delivery') {
+    return <Navigate to="/delivery" replace />;
   }
   return <Navigate to="/consumer" replace />;
 };
@@ -29,12 +32,12 @@ const ProtectedRoute = ({ children, allowedRoles, blockRoles }) => {
     
     // Block specific roles from this route (e.g. block 'farmer' from consumer pages)
     if (blockRoles && blockRoles.includes(role)) {
-      return <Navigate to={role === 'farmer' ? '/farmer' : '/consumer'} replace />;
+      return <Navigate to={role === 'farmer' ? '/farmer' : role === 'delivery' ? '/delivery' : '/consumer'} replace />;
     }
 
     // Only allow specific roles to access this route
     if (allowedRoles && !allowedRoles.includes(role)) {
-      return <Navigate to={role === 'farmer' ? '/farmer' : '/consumer'} replace />;
+      return <Navigate to={role === 'farmer' ? '/farmer' : role === 'delivery' ? '/delivery' : '/consumer'} replace />;
     }
   } else if (!isLoggedIn && allowedRoles) {
     // If not logged in and route requires authentication
@@ -73,6 +76,12 @@ function App() {
               <Route path="/checkout" element={
                 <ProtectedRoute allowedRoles={['consumer']}>
                   <Checkout />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/delivery" element={
+                <ProtectedRoute allowedRoles={['delivery']}>
+                  <DeliveryDashboard />
                 </ProtectedRoute>
               } />
               

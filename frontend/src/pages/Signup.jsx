@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Tractor, ShoppingBag, ArrowRight, User } from 'lucide-react';
+import { Tractor, ShoppingBag, ArrowRight, User, Bike } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 
@@ -19,7 +19,7 @@ const Signup = () => {
     e.preventDefault();
     login({ ...formData, role });
     if (role === 'farmer') navigate('/farmer');
-    else if (role === 'consumer') navigate('/consumer');
+    else if (role === 'delivery') navigate('/delivery');
     else navigate('/consumer');
   };
 
@@ -63,6 +63,12 @@ const Signup = () => {
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${role === 'consumer' ? 'bg-white text-primary-dark shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
             >
               <ShoppingBag className="w-4 h-4" /> {t('login.consumer')}
+            </button>
+            <button
+              onClick={() => setRole('delivery')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${role === 'delivery' ? 'bg-white text-primary-dark shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+            >
+              <Bike className="w-4 h-4" /> Delivery
             </button>
           </div>
 

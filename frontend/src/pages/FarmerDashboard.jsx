@@ -36,6 +36,7 @@ const FarmerDashboard = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [suggestedPrice, setSuggestedPrice] = useState(null);
   const [selectedOrderMap, setSelectedOrderMap] = useState(null);
+  const [notification, setNotification] = useState(null);
 
   const [isListening, setIsListening] = useState(false);
 
@@ -43,6 +44,11 @@ const FarmerDashboard = () => {
   useEffect(() => {
     fetchProducts();
     fetchOrders();
+
+    // Request System Push Notification Permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
   }, []);
 
   // Fetch Mandi prices when location changes
@@ -54,6 +60,17 @@ const FarmerDashboard = () => {
     const socket = io('http://localhost:5000');
     socket.on('new_order', (order) => {
       setOrders(prev => [order, ...prev]);
+      const msg = `New Order Received: ${order.item} from ${order.buyer}`;
+      setNotification(msg);
+      setTimeout(() => setNotification(null), 5000);
+
+      // Trigger Mobile/Browser System Notification
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification("Krishi Cart - Farmer", {
+          body: msg,
+          icon: 'https://cdn-icons-png.flaticon.com/512/1864/1864470.png'
+        });
+      }
     });
 
     return () => socket.disconnect();
@@ -186,7 +203,17 @@ const FarmerDashboard = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-[calc(100vh-64px)]">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-[calc(100vh-64px)] relative">
+      
+      {/* Notification Toast */}
+      {notification && (
+        <div className="fixed top-20 right-8 z-[200] bg-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+          <CheckCircle className="w-6 h-6" />
+          <p className="font-bold">{notification}</p>
+          <button onClick={() => setNotification(null)} className="ml-2 hover:bg-emerald-700 p-1 rounded-full"><X className="w-4 h-4"/></button>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">{t('farmer.dashboard')}</h1>
