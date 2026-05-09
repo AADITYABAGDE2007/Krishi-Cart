@@ -282,6 +282,7 @@ const hi = {
       continue: "खरीदारी जारी रखें"
     }
   }
+};
 // Marathi Translations
 const mr = {
   translation: {
