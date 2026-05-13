@@ -1,48 +1,34 @@
-import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import { useState, useEffect, useCallback } from 'react';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { X, Navigation, MapPin, Search } from 'lucide-react';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
 import { useLocation } from '../context/LocationContext';
 
-// Fix for leaflet marker icon missing in some React setups
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
-const MapClickHandler = ({ setPosition }) => {
-  useMapEvents({
-    click(e) {
-      setPosition(e.latlng);
-    },
-  });
-  return null;
-};
-
-// Component to handle map centering when search happens and fix rendering bugs
-const MapUpdater = ({ position }) => {
-  const map = useMap();
-  useEffect(() => {
-    if (map) {
-      // Small timeout to allow modal animation to finish before recalculating size
-      setTimeout(() => {
-        map.invalidateSize();
-        map.flyTo(position, 13);
-      }, 250);
-    }
-  }, [map, position]);
-  return null;
+const containerStyle = {
+  width: '100%',
+  height: '400px'
 };
 
 const LocationMapModal = ({ isOpen, onClose }) => {
   const { updateLocation } = useLocation();
-  const [position, setPosition] = useState({ lat: 26.8467, lng: 80.9462 }); // Default Lucknow
+  const [position, setPosition] = useState({ lat: 26.8467, lng: 80.9462 });
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+  });
+
+  const [map, setMap] = useState(null);
+
+  const onLoad = useCallback(function callback(map) {
+    setMap(map);
+  }, []);
+
+  const onUnmount = useCallback(function callback(map) {
+    setMap(null);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -65,10 +51,16 @@ const LocationMapModal = ({ isOpen, onClose }) => {
           setPosition({ lat, lng });
           
           try {
-            // Reverse Geocoding using Nominatim (OpenStreetMap)
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`);
+            const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+            const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`);
             const data = await res.json();
-            const city = data.address.city || data.address.town || data.address.village || data.address.county || 'Current Location';
+            
+            let city = 'Current Location';
+            if (data.status === 'OK' && data.results.length > 0) {
+              const addressComponents = data.results[0].address_components;
+              const cityComponent = addressComponents.find(c => c.types.includes('locality') || c.types.includes('administrative_area_level_2'));
+              if (cityComponent) city = cityComponent.long_name;
+            }
             updateLocation(city);
             onClose();
           } catch (error) {
@@ -93,9 +85,16 @@ const LocationMapModal = ({ isOpen, onClose }) => {
   const handleConfirmLocation = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.lat}&lon=${position.lng}&zoom=10`);
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+      const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.lat},${position.lng}&key=${apiKey}`);
       const data = await res.json();
-      const city = data.address.city || data.address.town || data.address.village || data.address.county || 'Selected Location';
+      
+      let city = 'Selected Location';
+      if (data.status === 'OK' && data.results.length > 0) {
+        const addressComponents = data.results[0].address_components;
+        const cityComponent = addressComponents.find(c => c.types.includes('locality') || c.types.includes('administrative_area_level_2'));
+        if (cityComponent) city = cityComponent.long_name;
+      }
       updateLocation(city);
       onClose();
     } catch (error) {
@@ -112,12 +111,16 @@ const LocationMapModal = ({ isOpen, onClose }) => {
     
     setIsSearching(true);
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`);
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+      const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(searchQuery)}&key=${apiKey}`);
       const data = await res.json();
-      if (data && data.length > 0) {
-        const lat = parseFloat(data[0].lat);
-        const lon = parseFloat(data[0].lon);
+      if (data.status === 'OK' && data.results.length > 0) {
+        const lat = data.results[0].geometry.location.lat;
+        const lon = data.results[0].geometry.location.lng;
         setPosition({ lat, lng: lon });
+        if (map) {
+          map.panTo({ lat, lng: lon });
+        }
       } else {
         alert("Location not found. Please try another search.");
       }
@@ -127,6 +130,10 @@ const LocationMapModal = ({ isOpen, onClose }) => {
     } finally {
       setIsSearching(false);
     }
+  };
+
+  const onMapClick = (e) => {
+    setPosition({ lat: e.latLng.lat(), lng: e.latLng.lng() });
   };
 
   return (
@@ -173,23 +180,22 @@ const LocationMapModal = ({ isOpen, onClose }) => {
 
         {/* Map Container */}
         <div className="relative flex-1 h-[400px] w-full bg-slate-200">
-          {isOpen && (
-            <MapContainer 
-              center={position} 
-              zoom={14} 
-              style={{ height: '400px', width: '100%', zIndex: 0 }}
-              scrollWheelZoom={true}
-              zoomControl={true}
+          {isOpen && isLoaded ? (
+            <GoogleMap
+              mapContainerStyle={containerStyle}
+              center={position}
+              zoom={14}
+              onLoad={onLoad}
+              onUnmount={onUnmount}
+              onClick={onMapClick}
+              options={{ disableDefaultUI: true, zoomControl: true }}
             >
-              <TileLayer
-                attribution='&copy; Google Maps'
-                url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
-                maxZoom={20}
-              />
               <Marker position={position} />
-              <MapClickHandler setPosition={setPosition} />
-              <MapUpdater position={position} />
-            </MapContainer>
+            </GoogleMap>
+          ) : (
+             <div className="w-full h-full flex items-center justify-center">
+               <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+             </div>
           )}
           
           <div className="absolute bottom-4 left-4 right-4 z-[400] flex flex-col sm:flex-row gap-3">

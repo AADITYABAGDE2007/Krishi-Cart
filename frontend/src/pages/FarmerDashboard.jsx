@@ -507,7 +507,7 @@ const FarmerDashboard = () => {
           {/* Low Stock Alerts */}
           {(() => {
             const lowStockItems = inventory.filter(item => {
-              let stockNum = 0;
+              let stockNum;
               const currentStock = item.stock || item.qty || '0';
               if (typeof currentStock === 'string') {
                 stockNum = parseInt(currentStock.replace(/[^\d]/g, '')) || 0;

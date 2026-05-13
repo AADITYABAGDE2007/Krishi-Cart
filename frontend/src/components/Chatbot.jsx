@@ -1,4 +1,4 @@
-/* eslint-disable no-unused-vars, react-hooks/set-state-in-effect, react-refresh/only-export-components */
+/* eslint-disable no-unused-vars */
 import { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Bot, User, Sparkles } from 'lucide-react';
 import { useLocation } from '../context/LocationContext';

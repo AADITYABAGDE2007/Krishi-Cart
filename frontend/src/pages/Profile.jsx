@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { User, Package, MapPin, Mail, Phone, Calendar, ChevronRight, ShoppingBag, Clock, CheckCircle, ArrowLeft } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User, Package, MapPin, Mail, Phone, Calendar, ChevronRight, ShoppingBag, Clock, CheckCircle, ArrowLeft, CreditCard, Landmark } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,6 +12,30 @@ const Profile = () => {
     { id: '#ORD-101', item: 'Organic Potatoes (2kg)', date: '2026-04-20', status: 'Delivered', price: '₹30' },
     { id: '#ORD-099', item: 'Onions (3kg)', date: '2026-04-15', status: 'Delivered', price: '₹45' },
   ]);
+
+  // Payment State
+  const [paymentDetails, setPaymentDetails] = useState({
+    upiId: '',
+    accountNumber: '',
+    ifscCode: '',
+    accountHolderName: ''
+  });
+  const [isEditingPayment, setIsEditingPayment] = useState(false);
+
+  useEffect(() => {
+    // Load saved payment details from localStorage
+    const saved = localStorage.getItem(`paymentDetails_${user?.email || 'default'}`);
+    if (saved) {
+      setPaymentDetails(JSON.parse(saved));
+    }
+  }, [user]);
+
+  const handleSavePayment = (e) => {
+    e.preventDefault();
+    localStorage.setItem(`paymentDetails_${user?.email || 'default'}`, JSON.stringify(paymentDetails));
+    setIsEditingPayment(false);
+    alert("Payment details saved successfully!");
+  };
 
   return (
     <div className="bg-slate-50 min-h-screen pt-24 pb-12">
@@ -73,7 +97,7 @@ const Profile = () => {
           <div className="lg:col-span-2 space-y-6">
             
             {/* Tabs */}
-            <div className="flex bg-white p-2 rounded-2xl shadow-sm border border-slate-100 gap-2">
+            <div className="flex bg-white p-2 rounded-2xl shadow-sm border border-slate-100 gap-2 overflow-x-auto whitespace-nowrap">
               <button 
                 onClick={() => setActiveTab('overview')}
                 className={`flex-1 py-3 px-6 rounded-xl font-bold text-sm transition-all ${activeTab === 'overview' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
@@ -84,7 +108,13 @@ const Profile = () => {
                 onClick={() => setActiveTab('history')}
                 className={`flex-1 py-3 px-6 rounded-xl font-bold text-sm transition-all ${activeTab === 'history' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
               >
-                Order History
+                History
+              </button>
+              <button 
+                onClick={() => setActiveTab('payment')}
+                className={`flex-1 py-3 px-6 rounded-xl font-bold text-sm transition-all ${activeTab === 'payment' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+              >
+                Payment Details
               </button>
               <button 
                 onClick={() => setActiveTab('settings')}
@@ -169,6 +199,133 @@ const Profile = () => {
                     </tbody>
                   </table>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'payment' && (
+              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg font-black text-slate-900">Payment Account Details</h3>
+                  {!isEditingPayment && (
+                    <button 
+                      onClick={() => setIsEditingPayment(true)}
+                      className="text-emerald-600 font-bold text-sm bg-emerald-50 px-4 py-2 rounded-lg hover:bg-emerald-100 transition-colors"
+                    >
+                      Edit Details
+                    </button>
+                  )}
+                </div>
+
+                {!isEditingPayment ? (
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50">
+                      <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-emerald-600 shadow-sm">
+                        <CreditCard className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Primary UPI ID</p>
+                        <p className="font-black text-slate-900">{paymentDetails.upiId || 'Not set'}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50">
+                      <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-blue-600 shadow-sm">
+                        <Landmark className="w-6 h-6" />
+                      </div>
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Bank Account Number</p>
+                          <p className="font-black text-slate-900 tracking-wider">
+                            {paymentDetails.accountNumber ? `•••• •••• ${paymentDetails.accountNumber.slice(-4)}` : 'Not set'}
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-2">
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">IFSC Code</p>
+                            <p className="font-bold text-sm text-slate-700">{paymentDetails.ifscCode || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Account Holder</p>
+                            <p className="font-bold text-sm text-slate-700">{paymentDetails.accountHolderName || 'N/A'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSavePayment} className="space-y-6">
+                    <div className="p-5 rounded-2xl border-2 border-emerald-100 bg-emerald-50/50 space-y-4">
+                      <h4 className="font-bold text-emerald-800 text-sm flex items-center gap-2">
+                        <CreditCard className="w-4 h-4" /> UPI Details
+                      </h4>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">UPI ID</label>
+                        <input 
+                          type="text" 
+                          value={paymentDetails.upiId}
+                          onChange={(e) => setPaymentDetails({...paymentDetails, upiId: e.target.value})}
+                          placeholder="e.g. mobile@upi"
+                          className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:ring-2 focus:ring-emerald-200 focus:border-emerald-500 outline-none transition-all shadow-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-5 rounded-2xl border border-slate-200 space-y-4">
+                      <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <Landmark className="w-4 h-4" /> Bank Account Details
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="md:col-span-2">
+                          <label className="block text-xs font-bold text-slate-700 mb-1.5">Account Holder Name</label>
+                          <input 
+                            type="text" 
+                            value={paymentDetails.accountHolderName}
+                            onChange={(e) => setPaymentDetails({...paymentDetails, accountHolderName: e.target.value})}
+                            placeholder="As per bank records"
+                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all shadow-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1.5">Account Number</label>
+                          <input 
+                            type="text" 
+                            value={paymentDetails.accountNumber}
+                            onChange={(e) => setPaymentDetails({...paymentDetails, accountNumber: e.target.value.replace(/\D/g,'')})}
+                            placeholder="Enter Account Number"
+                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all shadow-sm tracking-wider"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1.5">IFSC Code</label>
+                          <input 
+                            type="text" 
+                            value={paymentDetails.ifscCode}
+                            onChange={(e) => setPaymentDetails({...paymentDetails, ifscCode: e.target.value.toUpperCase()})}
+                            placeholder="e.g. SBIN0001234"
+                            maxLength={11}
+                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all shadow-sm uppercase"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-4">
+                      <button 
+                        type="button"
+                        onClick={() => setIsEditingPayment(false)}
+                        className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-6 rounded-xl transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        type="submit"
+                        className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-colors"
+                      >
+                        Save Details
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
             )}
 

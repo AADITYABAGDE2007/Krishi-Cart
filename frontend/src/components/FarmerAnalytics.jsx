@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { TrendingUp, Calculator, FileText, BadgePercent, MessageCircle, PhoneCall, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+import { XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { TrendingUp, Calculator, FileText, MessageCircle, PhoneCall } from 'lucide-react';
 
 export const FarmerAnalytics = () => {
   const [cost, setCost] = useState('');

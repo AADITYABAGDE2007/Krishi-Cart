@@ -4,17 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Filter, ShoppingCart, IndianRupee, MapPin, QrCode, X, User, Clock, CheckCircle, ArrowRight, ChevronRight, TrendingUp, TrendingDown, Zap, Sparkles, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from '../context/LocationContext';
-import 'leaflet/dist/leaflet.css';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import SmartSell from '../components/SmartSell';
-
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
 
 const getCoordinates = (locationName) => {
   if (locationName.includes('Nashik')) return [19.9975, 73.7898];
@@ -37,6 +28,12 @@ const ConsumerMarketplace = () => {
   const [showSmartBuy, setShowSmartBuy] = useState(false);
   const [mandiPrices, setMandiPrices] = useState([]);
   const [dataSource, setDataSource] = useState('mock');
+  const [selectedMarker, setSelectedMarker] = useState(null);
+
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+  });
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -233,35 +230,51 @@ const ConsumerMarketplace = () => {
            </button>
         </div>
 
-        {/* Content */}
         {showMap ? (
           <div className="h-[600px] w-full rounded-[2rem] border border-slate-200 shadow-sm relative z-0 overflow-hidden">
-            <MapContainer center={[21.1458, 79.0882]} zoom={5} scrollWheelZoom={true} style={{ height: '100%', width: '100%', zIndex: 0 }}>
-              <TileLayer
-                attribution='&copy; OpenStreetMap'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {filteredProducts.map(product => {
-                const position = getCoordinates(product.location);
-                return (
-                  <Marker key={product.id} position={position}>
-                    <Popup>
-                      <div className="text-center p-1">
-                        <img src={product.image} alt={product.name} className="w-full h-24 object-cover rounded-xl mb-2" />
-                        <h3 className="font-bold text-slate-900">{product.name}</h3>
-                        <p className="text-sm font-bold text-emerald-700">₹{product.price}/kg</p>
-                        <button 
-                          onClick={() => handleAddToCart(product)}
-                          className="mt-2 w-full bg-emerald-700 text-white py-2 rounded-lg text-xs font-bold"
-                        >
-                          Add to Cart
-                        </button>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              })}
-            </MapContainer>
+            {isLoaded ? (
+              <GoogleMap
+                center={{ lat: 21.1458, lng: 79.0882 }}
+                zoom={5}
+                mapContainerStyle={{ height: '100%', width: '100%', zIndex: 0 }}
+                options={{ disableDefaultUI: true, zoomControl: true }}
+              >
+                {filteredProducts.map(product => {
+                  const position = getCoordinates(product.location);
+                  const posObj = { lat: position[0], lng: position[1] };
+                  return (
+                    <Marker 
+                      key={product.id} 
+                      position={posObj}
+                      onClick={() => setSelectedMarker(product)}
+                    />
+                  );
+                })}
+
+                {selectedMarker && (
+                  <InfoWindow
+                    position={{ lat: getCoordinates(selectedMarker.location)[0], lng: getCoordinates(selectedMarker.location)[1] }}
+                    onCloseClick={() => setSelectedMarker(null)}
+                  >
+                    <div className="text-center p-1 min-w-[150px]">
+                      <img src={selectedMarker.image} alt={selectedMarker.name} className="w-full h-24 object-cover rounded-xl mb-2" />
+                      <h3 className="font-bold text-slate-900">{selectedMarker.name}</h3>
+                      <p className="text-sm font-bold text-emerald-700">₹{selectedMarker.price}/kg</p>
+                      <button 
+                        onClick={() => handleAddToCart(selectedMarker)}
+                        className="mt-2 w-full bg-emerald-700 text-white py-2 rounded-lg text-xs font-bold"
+                      >
+                        Add to Cart
+                      </button>
+                    </div>
+                  </InfoWindow>
+                )}
+              </GoogleMap>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">

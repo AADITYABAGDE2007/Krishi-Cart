@@ -1,4 +1,4 @@
-/* eslint-disable no-unused-vars, react-hooks/set-state-in-effect, react-refresh/only-export-components */
+/* eslint-disable no-unused-vars */
 import { useState } from 'react';
 import { useLocation as useRouteLocation, Link, useNavigate } from 'react-router-dom';
 import { User, ShoppingCart, MapPin, Search, ChevronDown, Globe, LogOut, Home, Store } from 'lucide-react';

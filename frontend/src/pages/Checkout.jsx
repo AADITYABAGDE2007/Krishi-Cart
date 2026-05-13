@@ -1,4 +1,4 @@
-/* eslint-disable no-unused-vars, react-hooks/set-state-in-effect, react-refresh/only-export-components */
+/* eslint-disable no-unused-vars */
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Truck, CreditCard, ShieldCheck, MapPin, AlertCircle, TrendingDown } from 'lucide-react';

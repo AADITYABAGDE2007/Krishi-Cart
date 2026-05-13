@@ -510,8 +510,33 @@ app.post('/api/feedback', async (req, res) => {
   }
 });
 
-app.post('/api/chat', (req, res) => {
-  res.json({ reply: "I'm Krishi Cart AI. I can help with orders, delivery tracking and live mandi prices!" });
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { message, location } = req.body;
+    
+    if (!process.env.GEMINI_API_KEY) {
+      return res.json({ reply: "I'm Krishi Cart AI. I can help with orders, delivery tracking and live mandi prices!" });
+    }
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    const prompt = `You are Krishi Cart AI Assistant, a helpful bot for an app that connects farmers directly with consumers. 
+    The user's current location is: ${location || 'Unknown'}.
+    Answer the following question from the user concisely and helpfully.
+    User's message: ${message}`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    res.json({ reply: text });
+  } catch (error) {
+    console.error('Gemini AI error:', error);
+    res.json({ reply: "I'm sorry, I'm having trouble processing your request right now. Error: " + error.message });
+  }
 });
 
 // Start Server

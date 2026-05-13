@@ -1,26 +1,10 @@
-import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
+import { useState, useEffect, useCallback } from 'react';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import { io } from "socket.io-client";
-import 'leaflet/dist/leaflet.css';
 
-// Fix Leaflet Default Icon issue
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
-// Component to dynamically fly the map to the driver's new position
-const MapUpdater = ({ position }) => {
-  const map = useMap();
-  useEffect(() => {
-    if (map && position) {
-      map.flyTo(position, map.getZoom(), { animate: true, duration: 1.5 });
-    }
-  }, [map, position]);
-  return null;
+const containerStyle = {
+  width: '100%',
+  height: '350px'
 };
 
 const LiveTrackingMap = ({ deliveryId, initialLat, initialLng }) => {
@@ -29,6 +13,20 @@ const LiveTrackingMap = ({ deliveryId, initialLat, initialLng }) => {
     lng: initialLng || 73.0 
   });
   const [isConnected, setIsConnected] = useState(false);
+  const [map, setMap] = useState(null);
+
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+  });
+
+  const onLoad = useCallback(function callback(map) {
+    setMap(map);
+  }, []);
+
+  const onUnmount = useCallback(function callback(map) {
+    setMap(null);
+  }, []);
 
   useEffect(() => {
     // Connect to Backend Socket.io
@@ -45,12 +43,15 @@ const LiveTrackingMap = ({ deliveryId, initialLat, initialLng }) => {
     // Listen specifically to this delivery ID's tracking updates
     socket.on(`tracking_${deliveryId}`, (data) => {
       setDriverPos({ lat: data.lat, lng: data.lng });
+      if (map) {
+        map.panTo({ lat: data.lat, lng: data.lng });
+      }
     });
 
     return () => {
       socket.disconnect();
     };
-  }, [deliveryId]);
+  }, [deliveryId, map]);
 
   return (
     <div className="relative border border-slate-200 rounded-xl overflow-hidden shadow-sm">
@@ -60,25 +61,29 @@ const LiveTrackingMap = ({ deliveryId, initialLat, initialLng }) => {
         <span className="text-slate-700">{isConnected ? 'Live Tracking On' : 'Connecting...'}</span>
       </div>
       
-      <MapContainer 
-        center={driverPos} 
-        zoom={15} 
-        style={{ height: '350px', width: '100%', zIndex: 0 }}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-        />
-        <Marker position={driverPos}>
-          <Popup>
-            <div className="text-center">
-              <span className="font-bold text-slate-800">Delivery Partner</span> <br/>
-              <span className="text-green-600 text-xs font-semibold">On the way</span>
-            </div>
-          </Popup>
-        </Marker>
-        <MapUpdater position={driverPos} />
-      </MapContainer>
+      {isLoaded ? (
+        <GoogleMap
+          mapContainerStyle={containerStyle}
+          center={driverPos}
+          zoom={15}
+          onLoad={onLoad}
+          onUnmount={onUnmount}
+          options={{ disableDefaultUI: true, zoomControl: true }}
+        >
+          <Marker position={driverPos}>
+            <InfoWindow position={driverPos}>
+              <div className="text-center">
+                <span className="font-bold text-slate-800">Delivery Partner</span> <br/>
+                <span className="text-green-600 text-xs font-semibold">On the way</span>
+              </div>
+            </InfoWindow>
+          </Marker>
+        </GoogleMap>
+      ) : (
+        <div className="w-full h-[350px] flex items-center justify-center bg-slate-100">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        </div>
+      )}
     </div>
   );
 };
