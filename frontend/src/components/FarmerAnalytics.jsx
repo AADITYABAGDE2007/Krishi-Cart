@@ -6,7 +6,6 @@ export const FarmerAnalytics = () => {
   const [cost, setCost] = useState('');
   const [sellingPrice, setSellingPrice] = useState('');
   const [profit, setProfit] = useState(null);
-  const [loanEligibility, setLoanEligibility] = useState(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
   const [chatHistory, setChatHistory] = useState([
@@ -21,15 +20,6 @@ export const FarmerAnalytics = () => {
     const p = s - c;
     const margin = ((p / c) * 100).toFixed(1);
     setProfit({ value: p.toFixed(2), margin });
-    
-    // Simple Loan Scoring AI Mock
-    const score = Math.min(95, 40 + (margin * 0.8) + (s * 0.05));
-    let status = 'Low';
-    if (score > 75) status = 'Excellent';
-    else if (score > 60) status = 'Good';
-    else if (score > 45) status = 'Fair';
-    
-    setLoanEligibility({ score: score.toFixed(0), status });
   };
 
   const salesData = [
@@ -65,11 +55,11 @@ export const FarmerAnalytics = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Financial Tools */}
+        {/* Profit Calculator */}
         <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-100">
           <div className="flex items-center gap-2 mb-6">
             <Calculator className="w-6 h-6 text-emerald-700" />
-            <h3 className="text-xl font-black text-emerald-900">Financial Tools & Loans</h3>
+            <h3 className="text-xl font-black text-emerald-900">Profit Calculator</h3>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -83,7 +73,7 @@ export const FarmerAnalytics = () => {
               </div>
             </div>
             <button onClick={calculateProfit} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl transition-colors">
-              Calculate Profit & Loan Score
+              Calculate Profit
             </button>
             
             {profit && (
@@ -96,17 +86,6 @@ export const FarmerAnalytics = () => {
                   <p className="text-xs font-bold text-slate-500 uppercase">Margin</p>
                   <p className="text-xl font-bold text-slate-800">{profit.margin}%</p>
                 </div>
-              </div>
-            )}
-            {loanEligibility && (
-              <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex justify-between items-center">
-                <div>
-                  <p className="text-xs font-bold text-blue-800 uppercase flex items-center gap-1"><FileText className="w-3 h-3"/> AI Loan Eligibility Score</p>
-                  <p className="text-2xl font-black text-blue-600">{loanEligibility.score}/100</p>
-                </div>
-                <span className={`px-3 py-1 rounded-lg text-xs font-bold ${loanEligibility.status==='Excellent'?'bg-emerald-100 text-emerald-700':loanEligibility.status==='Good'?'bg-blue-100 text-blue-700':'bg-yellow-100 text-yellow-700'}`}>
-                  {loanEligibility.status}
-                </span>
               </div>
             )}
           </div>
