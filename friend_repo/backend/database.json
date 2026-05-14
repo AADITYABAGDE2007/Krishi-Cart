@@ -1,0 +1,358 @@
+{
+  "products": [
+    {
+      "name": "Fresh Tomatoes",
+      "farmer": "Ramesh Singh",
+      "location": "Nashik, MH",
+      "lat": 19.9975,
+      "lng": 73.7898,
+      "price": 20,
+      "stock": "50",
+      "image": "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?ixlib=rb-4.0.3&w=500&q=60",
+      "status": "In Stock",
+      "_id": "be821211-d1e7-4457-8c0d-1a822a33a5b0",
+      "createdAt": "2026-05-09T19:22:52.312Z"
+    },
+    {
+      "name": "Organic Potatoes",
+      "farmer": "Suresh Kumar",
+      "location": "Agra, UP",
+      "lat": 27.1767,
+      "lng": 78.0081,
+      "price": 15,
+      "stock": "100",
+      "image": "https://images.unsplash.com/photo-1518977676601-b53f82aba655?ixlib=rb-4.0.3&w=500&q=60",
+      "status": "In Stock",
+      "_id": "d2d12745-a38b-4359-844f-f4f62eb90151",
+      "createdAt": "2026-05-09T19:22:52.312Z"
+    },
+    {
+      "name": "Red Onions",
+      "farmer": "Vikram Yadav",
+      "location": "Pune, MH",
+      "lat": 18.5204,
+      "lng": 73.8567,
+      "price": 30,
+      "stock": "200",
+      "image": "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?ixlib=rb-4.0.3&w=500&q=60",
+      "status": "In Stock",
+      "_id": "7d9eaede-443e-4d39-9bb2-bacfbe319414",
+      "createdAt": "2026-05-09T19:22:52.312Z"
+    }
+  ],
+  "orders": [],
+  "deliveries": [],
+  "feedbacks": [],
+  "farmerFeedbacks": [],
+  "users": [
+    {
+      "name": "Demo Farmer",
+      "phoneOrEmail": "4654684512",
+      "password": "mockpassword",
+      "role": "farmer",
+      "aadharNumber": "000000000000",
+      "_id": "5166e3eb-b8d5-4a94-8a39-fe7b5e10684a",
+      "createdAt": "2026-05-13T18:56:13.673Z",
+      "_collectionName": "users"
+    },
+    {
+      "name": "Demo Farmer",
+      "phoneOrEmail": "84656513",
+      "password": "mockpassword",
+      "role": "farmer",
+      "aadharNumber": "000000000000",
+      "_id": "7e2921f9-aa91-4d89-9e24-3a784490f53e",
+      "createdAt": "2026-05-13T19:50:03.603Z",
+      "_collectionName": "users"
+    },
+    {
+      "name": "Demo Farmer",
+      "phoneOrEmail": "845656",
+      "password": "mockpassword",
+      "role": "farmer",
+      "aadharNumber": "000000000000",
+      "_id": "db631ca5-d48e-496e-bad9-7cf96f8807ff",
+      "createdAt": "2026-05-13T20:02:26.845Z",
+      "_collectionName": "users"
+    },
+    {
+      "name": "Demo Farmer",
+      "phoneOrEmail": "irjjtujt",
+      "password": "mockpassword",
+      "role": "farmer",
+      "aadharNumber": "000000000000",
+      "_id": "508dceab-acdd-461d-8eaa-6d9e7ad608ce",
+      "createdAt": "2026-05-13T20:25:18.952Z",
+      "_collectionName": "users"
+    },
+    {
+      "name": "Demo Consumer",
+      "phoneOrEmail": "test",
+      "password": "mockpassword",
+      "role": "consumer",
+      "aadharNumber": "000000000000",
+      "_id": "ff54b45f-8ab7-4f0b-a2f9-82ab7e87c230",
+      "createdAt": "2026-05-14T03:46:36.883Z",
+      "_collectionName": "users"
+    },
+    {
+      "name": "Demo Consumer",
+      "phoneOrEmail": "yjhrsnhr",
+      "password": "mockpassword",
+      "role": "consumer",
+      "aadharNumber": "000000000000",
+      "_id": "d30b2ddd-cb02-4a53-b04c-7d200cf96905",
+      "createdAt": "2026-05-14T03:53:19.313Z",
+      "_collectionName": "users"
+    },
+    {
+      "name": "Demo Consumer",
+      "phoneOrEmail": "ebhtdfabh",
+      "password": "mockpassword",
+      "role": "consumer",
+      "aadharNumber": "000000000000",
+      "_id": "4bae5bc0-bfcc-4494-bfcd-2c7f4cd437fb",
+      "createdAt": "2026-05-14T03:57:53.487Z",
+      "_collectionName": "users"
+    },
+    {
+      "name": "Demo Farmer",
+      "phoneOrEmail": "ethdhet",
+      "password": "mockpassword",
+      "role": "farmer",
+      "aadharNumber": "000000000000",
+      "_id": "1eed4312-b043-45c4-8eca-c4217f7656cc",
+      "createdAt": "2026-05-14T04:06:04.785Z",
+      "_collectionName": "users"
+    },
+    {
+      "name": "Demo Consumer",
+      "phoneOrEmail": "RFWEF",
+      "password": "mockpassword",
+      "role": "consumer",
+      "aadharNumber": "000000000000",
+      "_id": "47be50a9-4d4d-40ff-b555-7b5cb37bedd4",
+      "createdAt": "2026-05-14T05:30:27.968Z",
+      "_collectionName": "users"
+    },
+    {
+      "name": "Demo Farmer",
+      "phoneOrEmail": "jjgjkjkj",
+      "password": "mockpassword",
+      "role": "farmer",
+      "aadharNumber": "000000000000",
+      "_id": "71793bde-4742-468f-8a24-781af6f4ecd2",
+      "createdAt": "2026-05-14T05:34:50.499Z",
+      "_collectionName": "users"
+    },
+    {
+      "name": "Demo Consumer",
+      "phoneOrEmail": "tgerf",
+      "password": "mockpassword",
+      "role": "consumer",
+      "aadharNumber": "000000000000",
+      "_id": "62c5e9ad-ced0-4451-9019-9cfda44bc2c4",
+      "createdAt": "2026-05-14T05:38:03.857Z",
+      "_collectionName": "users"
+    },
+    {
+      "name": "Demo Consumer",
+      "phoneOrEmail": "4tge",
+      "password": "mockpassword",
+      "role": "consumer",
+      "aadharNumber": "000000000000",
+      "_id": "2d47a0b9-0d86-40f0-abd7-bf265792134b",
+      "createdAt": "2026-05-14T05:42:55.460Z",
+      "_collectionName": "users"
+    },
+    {
+      "name": "Demo Farmer",
+      "phoneOrEmail": "hkfshksdh",
+      "password": "mockpassword",
+      "role": "farmer",
+      "aadharNumber": "000000000000",
+      "_id": "5c7544d7-b24f-4795-8f67-683730599424",
+      "createdAt": "2026-05-14T05:44:12.978Z",
+      "_collectionName": "users"
+    },
+    {
+      "name": "Demo Farmer",
+      "phoneOrEmail": "kdjckjnckj",
+      "password": "mockpassword",
+      "role": "farmer",
+      "aadharNumber": "000000000000",
+      "_id": "2af5ebd5-77f4-4b35-a5b9-cccaf49699cd",
+      "createdAt": "2026-05-14T05:46:28.586Z",
+      "_collectionName": "users"
+    },
+    {
+      "name": "Demo Farmer",
+      "phoneOrEmail": "kkhb",
+      "password": "mockpassword",
+      "role": "farmer",
+      "aadharNumber": "000000000000",
+      "_id": "f64f31fc-a569-4962-a6b3-95bf9cc4c0e1",
+      "createdAt": "2026-05-14T05:48:07.547Z",
+      "_collectionName": "users"
+    },
+    {
+      "name": "Demo Farmer",
+      "phoneOrEmail": "ge",
+      "password": "mockpassword",
+      "role": "farmer",
+      "aadharNumber": "000000000000",
+      "_id": "a491688d-12ab-4425-89ab-5092d39cdbfd",
+      "createdAt": "2026-05-14T06:14:07.030Z",
+      "_collectionName": "users"
+    }
+  ],
+  "chatHistory": [
+    {
+      "userId": "anonymous",
+      "sender": "user",
+      "message": "hi",
+      "language": "Hindi",
+      "_id": "c7041e64-b001-45bc-b757-a6d04a67bd20",
+      "createdAt": "2026-05-13T19:56:13.071Z",
+      "_collectionName": "chatHistory"
+    },
+    {
+      "userId": "anonymous",
+      "sender": "bot",
+      "message": "I am Krishi Cart AI. Please configure GEMINI_API_KEY in the backend .env file to enable full AI responses. For now, I can help with basic orders and mandi prices!",
+      "language": "Hindi",
+      "_id": "dbb265f6-48ea-4224-8725-375c33c44844",
+      "createdAt": "2026-05-13T19:56:13.074Z",
+      "_collectionName": "chatHistory"
+    },
+    {
+      "userId": "anonymous",
+      "sender": "user",
+      "message": "HI",
+      "language": "English",
+      "_id": "5688fabf-19b1-48fc-8f31-b81fa9cc1d91",
+      "createdAt": "2026-05-14T05:29:08.683Z",
+      "_collectionName": "chatHistory"
+    },
+    {
+      "userId": "anonymous",
+      "sender": "user",
+      "message": "SO WHAT CAN I DO",
+      "language": "English",
+      "_id": "8be121c9-9367-4749-8d27-659fdd315d16",
+      "createdAt": "2026-05-14T05:29:18.487Z",
+      "_collectionName": "chatHistory"
+    },
+    {
+      "userId": "anonymous",
+      "sender": "user",
+      "message": "HI",
+      "language": "Hindi",
+      "_id": "f0e5f169-0fb3-44fd-b7c2-ef543185f616",
+      "createdAt": "2026-05-14T05:29:27.549Z",
+      "_collectionName": "chatHistory"
+    },
+    {
+      "userId": "anonymous",
+      "sender": "user",
+      "message": "hi]",
+      "language": "Hindi",
+      "_id": "e0856f56-11dc-4bc5-87a0-02be450f6f0b",
+      "createdAt": "2026-05-14T05:37:40.899Z",
+      "_collectionName": "chatHistory"
+    }
+  ],
+  "analytics": [
+    {
+      "crop": "Wheat",
+      "season": "Summer",
+      "demand": "Medium",
+      "quantity": 100,
+      "currentPrice": 30,
+      "predictedPrice": 30.09,
+      "trend": "up",
+      "timestamp": "2026-05-13T20:02:33.051Z",
+      "_id": "1b5033c0-82c0-4ee6-81b9-3e08d18e6b2c",
+      "createdAt": "2026-05-13T20:02:33.052Z",
+      "_collectionName": "analytics"
+    },
+    {
+      "crop": "Mango",
+      "season": "Winter",
+      "demand": "Low",
+      "quantity": 100,
+      "currentPrice": 30,
+      "predictedPrice": 25.5,
+      "trend": "down",
+      "timestamp": "2026-05-13T20:03:09.138Z",
+      "_id": "178b2f04-6969-405f-88a2-00c44f1ce1e3",
+      "createdAt": "2026-05-13T20:03:09.138Z",
+      "_collectionName": "analytics"
+    },
+    {
+      "crop": "Mango",
+      "season": "Winter",
+      "demand": "High",
+      "quantity": 100,
+      "currentPrice": 30,
+      "predictedPrice": 34.94,
+      "trend": "up",
+      "timestamp": "2026-05-13T20:03:20.732Z",
+      "_id": "e766acea-f8e9-4cb9-a5b6-306f00896242",
+      "createdAt": "2026-05-13T20:03:20.732Z",
+      "_collectionName": "analytics"
+    },
+    {
+      "crop": "Mango",
+      "season": "Winter",
+      "demand": "Medium",
+      "quantity": 100,
+      "currentPrice": 30,
+      "predictedPrice": 29.78,
+      "trend": "down",
+      "timestamp": "2026-05-13T20:03:27.646Z",
+      "_id": "f5f2b7f7-99d2-43fa-aed2-a6a52b8ccb3e",
+      "createdAt": "2026-05-13T20:03:27.646Z",
+      "_collectionName": "analytics"
+    },
+    {
+      "crop": "Rice",
+      "season": "Winter",
+      "demand": "Low",
+      "quantity": 100,
+      "currentPrice": 30,
+      "predictedPrice": 25.39,
+      "trend": "down",
+      "timestamp": "2026-05-14T05:25:41.917Z",
+      "_id": "2f28cf8c-3178-4364-91df-4ce93db803a4",
+      "createdAt": "2026-05-14T05:25:41.919Z",
+      "_collectionName": "analytics"
+    },
+    {
+      "crop": "Rice",
+      "season": "Winter",
+      "demand": "Medium",
+      "quantity": 100,
+      "currentPrice": 30,
+      "predictedPrice": 30.86,
+      "trend": "up",
+      "timestamp": "2026-05-14T05:44:40.358Z",
+      "_id": "d6e5721e-162d-430e-b415-699e6e44f6c7",
+      "createdAt": "2026-05-14T05:44:40.358Z",
+      "_collectionName": "analytics"
+    },
+    {
+      "crop": "Rice",
+      "season": "Winter",
+      "demand": "Low",
+      "quantity": 100,
+      "currentPrice": 30,
+      "predictedPrice": 25.39,
+      "trend": "down",
+      "timestamp": "2026-05-14T05:44:52.054Z",
+      "_id": "4a23ba44-81c4-4f79-80f9-98cfe7d00be7",
+      "createdAt": "2026-05-14T05:44:52.054Z",
+      "_collectionName": "analytics"
+    }
+  ]
+}

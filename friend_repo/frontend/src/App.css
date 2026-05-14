@@ -1,0 +1,11 @@
+/* Custom styles for AgriConnect */
+:root {
+  --primary: #10b981;
+  --primary-dark: #059669;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
