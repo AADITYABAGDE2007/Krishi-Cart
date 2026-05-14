@@ -2,15 +2,28 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Mail, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { auth } from '../firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
 
 const ForgotPassword = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [submitted, setSubmitted] = useState(false);
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
+    setIsLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setSubmitted(true);
+    } catch (error) {
+      console.error(error);
+      alert(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -37,7 +50,9 @@ const ForgotPassword = () => {
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
                   <input
-                    type="text"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder-slate-400"
                     placeholder="example@gmail.com"
                     required
@@ -47,9 +62,10 @@ const ForgotPassword = () => {
 
               <button
                 type="submit"
-                className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-primary/20 flex justify-center items-center gap-2"
+                disabled={isLoading}
+                className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-primary/20 flex justify-center items-center gap-2 disabled:opacity-70"
               >
-                {t('login.sendLink')} <ArrowRight className="w-4 h-4" />
+                {isLoading ? 'Sending...' : <>{t('login.sendLink')} <ArrowRight className="w-4 h-4" /></>}
               </button>
             </form>
           </>

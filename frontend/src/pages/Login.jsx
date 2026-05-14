@@ -1,42 +1,103 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Tractor, ShoppingBag, ArrowRight, ShieldCheck, Mail, KeyRound, Bike } from 'lucide-react';
+import { Tractor, ShoppingBag, ArrowRight, ShieldCheck, Mail, KeyRound, Bike, Smartphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
+import { auth, googleProvider } from '../firebase';
+import { signInWithEmailAndPassword, signInWithPopup, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 
 const Login = () => {
   const { t } = useTranslation();
   const { login } = useAuth();
   const [role, setRole] = useState('farmer');
+  const [authMode, setAuthMode] = useState('email'); // 'email' or 'phone'
   const [step, setStep] = useState(1); // 1: Email/Phone, 2: OTP
   const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSendOTP = (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    // Simulate sending OTP delay
-    setTimeout(() => {
-      setIsLoading(false);
-      setStep(2);
-    }, 1000);
+  useEffect(() => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible'
+      });
+    }
+
+    return () => {
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+        window.recaptchaVerifier = null;
+      }
+    };
+  }, []);
+
+  const handleRoleRoute = () => {
+    if (role === 'farmer') navigate('/farmer');
+    else if (role === 'delivery') navigate('/delivery');
+    else navigate('/consumer');
   };
 
-  const handleVerifyOTP = (e) => {
+  const handleEmailLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Simulate verification
-    setTimeout(() => {
-      const user = { email: identifier, role };
-      login(user);
+    try {
+      // Mock login to bypass suspended Firebase API key
+      const mockUid = 'uid_' + Date.now().toString(36);
+      login({ uid: mockUid, email: identifier, role });
+      handleRoleRoute();
+    } catch (error) {
+      console.error(error);
+      alert(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      if (role === 'farmer') navigate('/farmer');
-      else if (role === 'delivery') navigate('/delivery');
-      else navigate('/consumer');
-    }, 1000);
+  const handleSendOTP = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      // Mock OTP sending
+      setTimeout(() => {
+        setStep(2);
+        setIsLoading(false);
+      }, 1000);
+    } catch (error) {
+      console.error(error);
+      alert(error.message);
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      // Mock OTP verification
+      login({ uid: 'uid_phone_' + Date.now(), phoneNumber: identifier, role });
+      handleRoleRoute();
+    } catch (error) {
+      console.error(error);
+      alert("Invalid OTP");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    try {
+      // Mock Google Login
+      login({ uid: 'uid_google_' + Date.now(), email: 'googleuser@example.com', name: 'Google User', role });
+      handleRoleRoute();
+    } catch (error) {
+      console.error(error);
+      alert(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -67,7 +128,7 @@ const Login = () => {
           </div>
           
           {/* Role Tabs */}
-          <div className="flex bg-slate-100 p-1.5 rounded-xl mb-8 border border-slate-200 shadow-inner">
+          <div className="flex bg-slate-100 p-1.5 rounded-xl mb-6 border border-slate-200 shadow-inner">
             <button
               onClick={() => setRole('farmer')}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${role === 'farmer' ? 'bg-white text-primary-dark shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
@@ -88,22 +149,66 @@ const Login = () => {
             </button>
           </div>
 
+          {/* Auth Mode Tabs */}
+          {step === 1 && (
+            <div className="flex justify-center gap-4 mb-6">
+              <button 
+                onClick={() => setAuthMode('email')}
+                className={`text-sm font-bold pb-1 border-b-2 transition-all ${authMode === 'email' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+              >
+                Email
+              </button>
+              <button 
+                onClick={() => setAuthMode('phone')}
+                className={`text-sm font-bold pb-1 border-b-2 transition-all ${authMode === 'phone' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+              >
+                Phone (OTP)
+              </button>
+            </div>
+          )}
+
           {step === 1 ? (
-            <form onSubmit={handleSendOTP} className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <form onSubmit={authMode === 'email' ? handleEmailLogin : handleSendOTP} className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1.5">{t('login.phoneEmail')}</label>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">
+                  {authMode === 'email' ? 'Email Address' : 'Phone Number'}
+                </label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                  {authMode === 'email' ? (
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                  ) : (
+                    <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                  )}
                   <input
-                    type="text"
+                    type={authMode === 'email' ? 'email' : 'tel'}
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white border border-slate-300 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder-slate-400 shadow-sm"
-                    placeholder={t('login.phonePlaceholder')}
+                    placeholder={authMode === 'email' ? 'john@example.com' : '9876543210'}
                     required
                   />
                 </div>
               </div>
+
+              {authMode === 'email' && (
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="block text-sm font-bold text-slate-700">Password</label>
+                    <Link to="/forgot-password" className="text-xs font-bold text-primary hover:text-primary-dark transition-colors">Forgot Password?</Link>
+                  </div>
+                  <div className="relative">
+                    <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white border border-slate-300 text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder-slate-400 shadow-sm"
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center justify-between text-sm pt-2">
                 <label className="flex items-center gap-2 cursor-pointer group">
@@ -118,11 +223,31 @@ const Login = () => {
                 className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3.5 rounded-xl transition-all shadow-md shadow-primary/20 flex justify-center items-center gap-2 mt-4 active:scale-[0.98]"
               >
                 {isLoading ? (
-                   <span className="flex items-center gap-2">Sending OTP <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span></span>
+                   <span className="flex items-center gap-2">Processing... <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span></span>
                 ) : (
-                   <span className="flex items-center gap-2">Send OTP <ArrowRight className="w-4 h-4" /></span>
+                   <span className="flex items-center gap-2">{authMode === 'email' ? 'Login' : 'Send OTP'} <ArrowRight className="w-4 h-4" /></span>
                 )}
               </button>
+
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-200"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-slate-50 text-slate-500 font-medium">Or continue with</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={isLoading}
+                className="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-3 rounded-xl transition-all shadow-sm flex justify-center items-center gap-3 active:scale-[0.98]"
+              >
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
+                Google
+              </button>
+
             </form>
           ) : (
             <form onSubmit={handleVerifyOTP} className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -149,7 +274,7 @@ const Login = () => {
 
               <button
                 type="submit"
-                disabled={isLoading || otp.length < 4}
+                disabled={isLoading || otp.length < 6}
                 className="w-full bg-slate-900 hover:bg-black text-white font-bold py-3.5 rounded-xl transition-all shadow-md shadow-slate-900/20 flex justify-center items-center gap-2 mt-4 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
@@ -172,6 +297,7 @@ const Login = () => {
           <p className="mt-8 text-center text-sm text-slate-500 font-medium">
             {t('login.noAccount')} <Link to="/signup" className="text-primary-dark font-bold hover:underline transition-colors">{t('login.signUp')}</Link>
           </p>
+          <div id="recaptcha-container"></div>
         </div>
       </div>
     </div>

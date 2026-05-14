@@ -96,7 +96,7 @@ function App() {
               } />
               
               <Route path="/profile" element={
-                <ProtectedRoute allowedRoles={['farmer', 'consumer']}>
+                <ProtectedRoute>
                   <Profile />
                 </ProtectedRoute>
               } />

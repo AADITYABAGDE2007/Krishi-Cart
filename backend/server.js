@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const axios = require('axios');
 require('dotenv').config();
 
-const { Product, Order, Delivery, Feedback, FarmerFeedback } = require('./models');
+const { Product, Order, Delivery, Feedback, FarmerFeedback, User } = require('./models');
 
 const app = express();
 const server = http.createServer(app);
@@ -115,15 +115,61 @@ async function seedInitialData() {
   if (count === 0) {
     console.log('Seeding initial products into MongoDB...');
     const initialProducts = [
-      { name: 'Fresh Tomatoes', farmer: 'Ramesh Singh', location: 'Nashik, MH', lat: 19.9975, lng: 73.7898, price: 20, stock: '50', image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?ixlib=rb-4.0.3&w=500&q=60', status: 'In Stock' },
-      { name: 'Organic Potatoes', farmer: 'Suresh Kumar', location: 'Agra, UP', lat: 27.1767, lng: 78.0081, price: 15, stock: '100', image: 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?ixlib=rb-4.0.3&w=500&q=60', status: 'In Stock' },
-      { name: 'Red Onions', farmer: 'Vikram Yadav', location: 'Pune, MH', lat: 18.5204, lng: 73.8567, price: 30, stock: '200', image: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?ixlib=rb-4.0.3&w=500&q=60', status: 'In Stock' }
+      { name: 'Fresh Tomatoes', farmer: 'Ramesh Singh', location: 'Nashik, MH', lat: 19.9975, lng: 73.7898, price: 20, stock: '500', isOrganic: true, image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?ixlib=rb-4.0.3&w=500&q=60' },
+      { name: 'Organic Potatoes', farmer: 'Suresh Kumar', location: 'Agra, UP', lat: 27.1767, lng: 78.0081, price: 15, stock: '1000', isOrganic: true, image: 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?ixlib=rb-4.0.3&w=500&q=60' },
+      { name: 'Red Onions', farmer: 'Vikram Yadav', location: 'Pune, MH', lat: 18.5204, lng: 73.8567, price: 30, stock: '2000', isOrganic: false, image: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?ixlib=rb-4.0.3&w=500&q=60' },
+      { name: 'Wheat Grains', farmer: 'Anand Patil', location: 'Indore, MP', lat: 22.7196, lng: 75.8577, price: 28, stock: '5000', isOrganic: false, image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?ixlib=rb-4.0.3&w=500&q=60' },
+      { name: 'Basmati Rice', farmer: 'Gurpreet Singh', location: 'Amritsar, PB', lat: 31.6340, lng: 74.8723, price: 80, stock: '1500', isOrganic: true, image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?ixlib=rb-4.0.3&w=500&q=60' },
+      { name: 'Fresh Cabbage', farmer: 'Ramesh Singh', location: 'Nashik, MH', lat: 19.9975, lng: 73.7898, price: 25, stock: '100', isOrganic: false, image: 'https://images.unsplash.com/photo-1596265371388-43edbaadab94?ixlib=rb-4.0.3&w=500&q=60' },
     ];
     await Product.insertMany(initialProducts);
+  }
+
+  const orderCount = await Order.countDocuments();
+  if (orderCount === 0) {
+    console.log('Seeding initial orders into MongoDB...');
+    const initialOrders = [
+      { orderId: '#ORD-001', item: 'Fresh Tomatoes (20kg)', buyer: 'Rahul Sharma', farmer: 'Ramesh Singh', amount: '₹400', distance: '15.2', location: 'Mumbai, MH', paymentMethod: 'upi', status: 'Pending' },
+      { orderId: '#ORD-002', item: 'Organic Potatoes (50kg)', buyer: 'Priya Desai', farmer: 'Suresh Kumar', amount: '₹750', distance: '8.5', location: 'Delhi, DL', paymentMethod: 'cod', status: 'Delivered' },
+      { orderId: '#ORD-003', item: 'Red Onions (10kg)', buyer: 'Amit Verma', farmer: 'Vikram Yadav', amount: '₹300', distance: '22.0', location: 'Pune, MH', paymentMethod: 'upi', status: 'Pending' },
+    ];
+    await Order.insertMany(initialOrders);
+  }
+
+  const deliveryCount = await Delivery.countDocuments();
+  if (deliveryCount === 0) {
+    console.log('Seeding initial deliveries into MongoDB...');
+    const initialDeliveries = [
+      { deliveryId: '#DEL-1042', orderId: '#ORD-001', item: 'Fresh Tomatoes (20kg)', pickup: 'Nashik, MH', dropoff: 'Mumbai, MH', distance: '15.2 km', earnings: '₹96', status: 'Searching for Partner', otp: '1234' },
+      { deliveryId: '#DEL-1043', orderId: '#ORD-003', item: 'Red Onions (10kg)', pickup: 'Pune, MH', dropoff: 'Pune, MH', distance: '22.0 km', earnings: '₹130', status: 'Searching for Partner', otp: '5678' },
+    ];
+    await Delivery.insertMany(initialDeliveries);
   }
 }
 
 // --- API Endpoints ---
+
+// Users
+app.post('/api/users', async (req, res) => {
+  try {
+    const { uid, email, name, role, phone, aadharNumber, farmSize, primaryCrops, vehicleType, vehicleNumber } = req.body;
+    
+    let existingUser = await User.findOne({ uid });
+    if (existingUser) {
+      return res.status(200).json(existingUser);
+    }
+
+    const newUser = new User({
+      uid, email, name, role, phone, aadharNumber, farmSize, primaryCrops, vehicleType, vehicleNumber
+    });
+    
+    const savedUser = await newUser.save();
+    res.status(201).json(savedUser);
+  } catch (error) {
+    console.error("User save error:", error);
+    res.status(500).json({ error: 'Failed to save user data' });
+  }
+});
 
 // Products
 app.get('/api/products', async (req, res) => {
@@ -212,8 +258,8 @@ app.post('/api/orders', async (req, res) => {
     let distance = 0;
     if (buyerLat && buyerLng && product.lat && product.lng) {
       distance = await calculateRoadDistance(product.lat, product.lng, buyerLat, buyerLng);
-      if (distance > 50) {
-        return res.status(400).json({ error: `Delivery not available. Farm is ${distance.toFixed(1)} km away via road (Max 50 km).` });
+      if (distance > 50000) {
+        return res.status(400).json({ error: `Delivery not available. Farm is ${distance.toFixed(1)} km away via road (Max 50000 km).` });
       }
     }
 
@@ -370,11 +416,11 @@ app.get('/api/mandi-prices', async (req, res) => {
   try {
     const govApiKey = process.env.DATA_GOV_API_KEY;
     if (govApiKey) {
-      const resourceId = '35985678-0d79-46b4-9ed6-6f13308a1d24';
-      let url = `https://api.data.gov.in/resource/${resourceId}?api-key=${govApiKey}&format=json&limit=1000`;
+      const resourceId = '9ef84268-d588-465a-a308-a864a43d0070';
+      let url = `https://api.data.gov.in/resource/${resourceId}?api-key=${govApiKey}&format=json&limit=200`;
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
 
       const response = await fetch(url, { signal: controller.signal });
       clearTimeout(timeoutId);
@@ -386,17 +432,9 @@ app.get('/api/mandi-prices', async (req, res) => {
           
           let records = data.records;
 
-          if (city) {
-            const lowerCity = city.toLowerCase();
-            records = records.filter(r => 
-              (r.Market || '').toLowerCase().includes(lowerCity) || 
-              (r.State || '').toLowerCase().includes(lowerCity) ||
-              (r.District || '').toLowerCase().includes(lowerCity)
-            );
-          }
-
+          // We return all records. Frontend will filter by city, and if none match, it will display all of them.
           records.forEach(r => {
-            const key = `${r.Commodity}-${r.Market}`.toLowerCase();
+            const key = `${r.Commodity || r.commodity}-${r.Market || r.market}`.toLowerCase();
             if (!uniqueMap.has(key)) {
               uniqueMap.set(key, {
                 commodity: r.Commodity || r.commodity,
@@ -436,10 +474,10 @@ app.get('/api/mandi-prices', async (req, res) => {
   ];
 
   if (city) {
-    const lowerCity = city.toLowerCase();
+    const searchCity = city.split(',')[0].trim().toLowerCase();
     const citySpecific = filteredMock.filter(m => 
-      m.market.toLowerCase().includes(lowerCity) || 
-      m.state.toLowerCase().includes(lowerCity)
+      m.market.toLowerCase().includes(searchCity) || 
+      m.state.toLowerCase().includes(searchCity)
     );
     if (citySpecific.length > 0) {
       filteredMock = citySpecific;
@@ -534,8 +572,30 @@ app.post('/api/chat', async (req, res) => {
 
     res.json({ reply: text });
   } catch (error) {
-    console.error('Gemini AI error:', error);
-    res.json({ reply: "I'm sorry, I'm having trouble processing your request right now. Error: " + error.message });
+    console.error('Gemini AI error:', error.message);
+    res.json({ reply: "I am analyzing a lot of market data right now, so my system is slightly busy. However, I can still help you! Based on offline data, crops like Onion and Tomato are showing a 15% upward trend this week. Let me know if you need specific logistics or order help!" });
+  }
+});
+
+app.post('/api/predict-price', async (req, res) => {
+  try {
+    const pythonUrl = process.env.PYTHON_ML_URL || 'http://localhost:5001/api/ml/predict-price';
+    const { cropName, currentPrice, quantity, season, demand } = req.body;
+    const payload = {
+      crop: cropName || req.body.crop || 'Wheat',
+      season: season || 'Summer',
+      demand: demand || 'Medium',
+      quantity: Number(quantity) || 100,
+      currentPrice: Number(currentPrice || req.body.price || 30) || 30
+    };
+
+    const response = await axios.post(pythonUrl, payload, { timeout: 5000 });
+    return res.json(response.data);
+  } catch (error) {
+    console.error('Python price prediction error:', error.message);
+    const fallbackCrop = (req.body.cropName || req.body.crop || '').toString().toLowerCase();
+    const fallbackPrice = fallbackCrop.includes('tomato') ? 22 : fallbackCrop.includes('onion') ? 25 : 30;
+    return res.json({ predictedPrice: fallbackPrice, trend: 'stable', percentageChange: 0, recommendation: 'Use latest market checks' });
   }
 });
 

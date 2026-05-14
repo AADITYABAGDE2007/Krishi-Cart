@@ -7,6 +7,7 @@ const productSchema = new mongoose.Schema({
   lat: Number,
   lng: Number,
   price: { type: Number, required: true },
+  predictedPrice: Number,
   stock: String,
   image: String,
   isOrganic: { type: Boolean, default: false },
@@ -56,10 +57,35 @@ const farmerFeedbackSchema = new mongoose.Schema({
   comment: String
 }, { timestamps: true });
 
+const userSchema = new mongoose.Schema({
+  uid: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  role: { type: String, required: true },
+  phone: String,
+  aadharNumber: String,
+  farmSize: String,
+  primaryCrops: String,
+  vehicleType: String,
+  vehicleNumber: String,
+}, { timestamps: true });
+
+const cropPredictionSchema = new mongoose.Schema({
+  farmerId: String,
+  cropName: String,
+  location: String,
+  currentPrice: String,
+  prediction1Month: String,
+  prediction2Month: String,
+  aiSuggestion: String
+}, { timestamps: true });
+
 const Product = mongoose.model('Product', productSchema);
 const Order = mongoose.model('Order', orderSchema);
 const Delivery = mongoose.model('Delivery', deliverySchema);
 const Feedback = mongoose.model('Feedback', feedbackSchema);
 const FarmerFeedback = mongoose.model('FarmerFeedback', farmerFeedbackSchema);
+const User = mongoose.model('User', userSchema);
+const CropPrediction = mongoose.model('CropPrediction', cropPredictionSchema);
 
-module.exports = { Product, Order, Delivery, Feedback, FarmerFeedback };
+module.exports = { Product, Order, Delivery, Feedback, FarmerFeedback, User, CropPrediction };

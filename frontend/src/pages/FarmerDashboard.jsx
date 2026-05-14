@@ -6,17 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocation } from '../context/LocationContext';
 import SmartSell from '../components/SmartSell';
 import { FarmerAnalytics } from '../components/FarmerAnalytics';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-
-// Fix for leaflet marker icon
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 
 // Helper to simulate coordinates from city name
 const getCoordinates = (locationName) => {
@@ -43,9 +33,13 @@ const FarmerDashboard = () => {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showSmartSell, setShowSmartSell] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-
   const [isListening, setIsListening] = useState(false);
   const [dataSource, setDataSource] = useState('mock');
+
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+  });
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -263,24 +257,28 @@ const FarmerDashboard = () => {
     }
   };
 
-  const handleAISuggestion = () => {
+  const handleAISuggestion = async () => {
     if (!newItem.name) {
       alert("Please enter a produce name first!");
       return;
     }
     setIsAnalyzing(true);
-    // Simulate AI calculation delay
-    setTimeout(() => {
-      // Mock suggestion logic based on name length or random
-      const basePrice = newItem.name.toLowerCase().includes('tomato') ? 22 : 
-                        newItem.name.toLowerCase().includes('potato') ? 16 : 45;
-      const suggested = basePrice + Math.floor(Math.random() * 5);
-      
-      setNewItem({...newItem, price: suggested});
-      setSuggestedPrice(suggested);
+    try {
+      const res = await fetch('http://localhost:5000/api/predict-price', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cropName: newItem.name, location: selectedLocation })
+      });
+      const data = await res.json();
+      if (data.predictedPrice) {
+        setNewItem({...newItem, price: data.predictedPrice});
+        setSuggestedPrice(data.predictedPrice);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
       setIsAnalyzing(false);
-      setIsAnalyzing(false);
-    }, 1500);
+    }
   };
 
   const startVoiceInput = () => {
@@ -645,7 +643,7 @@ const FarmerDashboard = () => {
               <SmartSell mode="sell" />
             </div>
           )}
-        </div>
+          </div>
 
         {/* Right Column - Active Orders */}
         <div className="space-y-8">
@@ -726,23 +724,30 @@ const FarmerDashboard = () => {
                 <button onClick={() => setSelectedOrderMap(null)} className="text-slate-400 hover:text-slate-600 bg-white border border-slate-200 rounded-full p-1.5"><X className="w-5 h-5" /></button>
              </div>
              
-             <div className="flex-1 bg-slate-100 relative">
-               <MapContainer center={getCoordinates(selectedOrderMap.location)} zoom={13} style={{ height: '100%', width: '100%' }}>
-                  <TileLayer
-                    attribution='&copy; OpenStreetMap'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  <Marker position={getCoordinates(selectedOrderMap.location)}>
-                    <Popup>
-                      <div className="text-center font-sans">
-                        <p className="font-bold text-slate-800">{selectedOrderMap.buyer}'s Location</p>
-                        <p className="text-xs text-slate-500">{selectedOrderMap.location}</p>
-                        <p className="text-xs font-bold text-emerald-600 mt-1 uppercase tracking-wider">{selectedOrderMap.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Paid'}</p>
-                      </div>
-                    </Popup>
-                  </Marker>
-               </MapContainer>
-             </div>
+              <div className="flex-1 bg-slate-100 relative">
+                {isLoaded ? (
+                  <GoogleMap
+                    mapContainerStyle={{ height: '100%', width: '100%' }}
+                    center={{ lat: getCoordinates(selectedOrderMap.location)[0], lng: getCoordinates(selectedOrderMap.location)[1] }}
+                    zoom={13}
+                    options={{ disableDefaultUI: true, zoomControl: true }}
+                  >
+                    <Marker position={{ lat: getCoordinates(selectedOrderMap.location)[0], lng: getCoordinates(selectedOrderMap.location)[1] }}>
+                       <InfoWindow position={{ lat: getCoordinates(selectedOrderMap.location)[0], lng: getCoordinates(selectedOrderMap.location)[1] }}>
+                         <div className="text-center font-sans p-1">
+                           <p className="font-bold text-slate-800">{selectedOrderMap.buyer}'s Location</p>
+                           <p className="text-xs text-slate-500">{selectedOrderMap.location}</p>
+                           <p className="text-xs font-bold text-emerald-600 mt-1 uppercase tracking-wider">{selectedOrderMap.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Paid'}</p>
+                         </div>
+                       </InfoWindow>
+                    </Marker>
+                  </GoogleMap>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                  </div>
+                )}
+              </div>
 
              <div className="p-5 bg-white border-t border-slate-100 flex justify-between items-center">
                 <div className="flex items-center gap-3">
